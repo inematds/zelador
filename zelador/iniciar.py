@@ -48,12 +48,14 @@ def diagnosticar(cfg):
     rz = [r for r in config.raizes(cfg) if r.is_dir()]
     if not rz:
         add('raizes', 'proposta', f"nenhuma pasta de projetos encontrada em {cfg['geral']['raizes']}: "
-                                  'diga onde ficam com `--raiz <pasta>`')
-        return A
+                                  'diga onde ficam com `--raiz <pasta>`; as rotinas abaixo são verificadas mesmo assim')
     projs = [p for p in controle.projetos(cfg) if (p / '.git').exists()]
-    add('raizes', 'info', f"{', '.join(map(str, rz))} · {len(projs)} projeto(s) com git")
+    if rz:
+        add('raizes', 'info', f"{', '.join(map(str, rz))} · {len(projs)} projeto(s) com git")
 
     for tipo, (nome, para) in TIPOS.items():
+        if not rz:
+            break
         achados = controle.achar(cfg, tipo)
         parecidos = controle.parecidos(cfg, tipo)
         if achados:

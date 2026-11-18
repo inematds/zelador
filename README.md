@@ -4,7 +4,7 @@
 
 [![Zelador](guia/assets/banner.jpg)](https://inematds.github.io/zelador/guia/)
 
-**O agente Zelador te ajuda a melhorar o seu sistema todo dia.** Enquanto você dorme, ele olha o que falhou. De manhã, te avisa. Com o que se repete, aprende. Com a sua IA ligada, investiga a causa e sugere o conserto. Você só decide.
+**O agente Zelador te ajuda a melhorar o seu sistema todo dia.** Sem ele, você só descobre o problema quando alguém reclama. Com ele, as rotinas da sua máquina são conferidas toda madrugada e, de manhã, ele te avisa. Se você ligar a explicação pela sua IA, ele investiga a causa e sugere o conserto. Você decide e pede à IA para fazer.
 
 ## 📖 Guia
 
@@ -32,7 +32,7 @@ Abra o Claude Code, ou o Codex, na máquina onde as rotinas rodam, na pasta onde
 
 ```text
 Leia o projeto Zelador em https://github.com/inematds/zelador (o README explica tudo, inclusive a instalação).
-Baixe uma cópia numa pasta temporária, fora dos meus projetos, e rode só o diagnóstico, a partir da pasta onde ficam os meus projetos (procure, se eu não souber). Não altere nada.
+Baixe uma cópia numa pasta temporária, fora dos meus projetos, e rode só o diagnóstico, a partir da pasta onde ficam os meus projetos (procure; se eu não tiver, siga sem ela). Não altere nada.
 Depois me responda em português simples:
 1. Ele enxerga as rotinas que rodam aqui? O que ele veria, o que não veria, e ele continua rodando sem ninguém conectado?
 2. O que eu já tenho e ele pode aproveitar?
@@ -50,7 +50,7 @@ Python 3.11+, só biblioteca padrão. Testado em Linux; fonte que não existe na
 
 ```bash
 git clone https://github.com/inematds/zelador.git && cd zelador
-python3 -m unittest discover -s tests -v     # 25 testes, sem rede
+python3 -m unittest discover -s tests -v     # 27 testes, sem rede
 bin/zelador iniciar                          # diagnóstico: não escreve nada
 bin/zelador iniciar --aplicar                # cria o que falta, nunca sobrescreve
 bin/zelador bloco                            # instrução para colar no CLAUDE.md/AGENTS.md
@@ -80,7 +80,7 @@ Um nome parecido (`ERRORS.md`, `TODO.md`) só é adotado por `--aplicar` quando 
 | 5 | Agendar | `zelador agendar --aplicar` | ⚙️ |
 | 6 | Todo dia 04:20: falhas de rotina, falta de memória, erro repetido, erros do cron, registros novos, disco | `zelador noite` | ⚙️ |
 | 7 | Toda segunda 07:45: pauta com as falhas que voltam, madrugadas graves, seus outros monitores, limites abertos e pendências paradas | `zelador pauta --avisar` | ⚙️ |
-| 8 | Cada item novo ganha a explicação simples, a causa provável e o conserto sugerido, lendo o fim dos registros da rotina e dos logs recentes do projeto, com senhas ocultadas (`explicar.ler_registros`) | `explicar.comando` | 🤖 |
+| 8 | Cada item novo ganha a explicação simples, a causa provável e o conserto sugerido, lendo o fim dos registros da rotina e dos logs recentes do projeto, tentando ocultar senhas, sem garantia (`explicar.ler_registros`) | `explicar.comando` | 🤖 |
 | 9 | Ler e decidir no painel: Aprovar, Recusar (some por 8 semanas), Analisar, Adiar, com nota | `zelador painel` → http://127.0.0.1:8810/ | 🧠 |
 | 10 | Fechar a semana: aprovadas e "analisar" entram nas pendências, e o aviso manda o placar | botão no painel | 🧠 |
 

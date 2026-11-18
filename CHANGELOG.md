@@ -5,6 +5,8 @@
 - A explicação por IA passa a trazer causa provável e conserto sugerido, lendo o fim do registro da rotina (senhas ocultadas; `explicar.ler_registros`).
 - Rotina parada é apontada na primeira execução perdida: o ritmo vem do histórico da máquina.
 - O relatório diário traz o endereço do formulário.
+- Filtro de senhas mais amplo, aplicado também ao aviso, ao relatório e ao que vai para a IA; não há garantia de pegar tudo.
+- O diagnóstico continua sem pasta de projetos.
 
 ## 1.1.2 — 2026-11-18
 

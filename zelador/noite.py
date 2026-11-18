@@ -325,6 +325,7 @@ def rodar(cfg, horas=None, sem_aviso=False):
         atencao.append(f"{len(velhos)} unidade(s) presa(s) em 'failed' de antes: " + ', '.join(velhos[:8])
                        + (' …' if len(velhos) > 8 else ''))
 
+    grave, atencao = [controle.ocultar(x) for x in grave], [controle.ocultar(x) for x in atencao]
     L = [f'# Zelador — madrugada {hoje} (últimas {horas} h)', '',
          f'- grave: {len(grave)} · atenção: {len(atencao)} · disco {disco_pct}% · '
          f'{sum(erros.values())} erro(s) no journal em {len(erros)} tipo(s)',
@@ -338,7 +339,7 @@ def rodar(cfg, horas=None, sem_aviso=False):
     L += ['', 'Como agir: `journalctl --user -u <unidade> -n 50`; depois de corrigir, uma linha no FALHAS.md.',
           "Unidade avulsa velha em 'failed' que não importa mais: `systemctl --user reset-failed <unidade>`."]
     rel = pasta / f'{hoje}.md'
-    rel.write_text('\n'.join(L) + '\n')
+    rel.write_text(controle.ocultar('\n'.join(L)) + '\n')
     (pasta / f'{hoje}.json').write_text(json.dumps({'grave': grave, 'atencao': atencao, 'origem': origem}, ensure_ascii=False, indent=1))
     estado['ultima'] = hoje
     arq_estado.write_text(json.dumps(estado, ensure_ascii=False, indent=1))
@@ -370,5 +371,5 @@ def rodar(cfg, horas=None, sem_aviso=False):
         return resultado
     if grave or atencao:
         msg += '\nPara entender ou consertar, cole este aviso na sua IA.'
-    resultado['aviso'] = avisar.avisar(cfg, msg)
+    resultado['aviso'] = avisar.avisar(cfg, controle.ocultar(msg))
     return resultado

@@ -49,8 +49,6 @@ Itens:
 """
 
 
-SEGREDO = re.compile(r'(?i)bearer\s+\S+|\b(?:sk|ghp|xox[bpa])[-_][A-Za-z0-9_-]{10,}|\b\d{8,10}:[A-Za-z0-9_-]{30,}'
-                     r'|\b(?:password|passwd|senha|token|secret|api[_-]?key)\b\s*[=:]\s*\S+')
 CAMPOS = ('aconteceu', 'importa', 'muda', 'causa', 'conserto')
 
 
@@ -137,7 +135,7 @@ def registros_do_item(cfg, it):
             return ''
     except Exception:
         return ''
-    return SEGREDO.sub('[oculto]', txt)[-6000:]
+    return controle.ocultar(txt)[-6000:]
 
 
 def ident(*partes):
@@ -271,8 +269,9 @@ def explicar(cfg, itens, hoje):
     erro = ''
     if e['comando'] and faltam:
         for k in range(0, min(len(faltam), 10 * e['max_chamadas']), 10):
-            lote = [{'id': i['id'], 'fonte': i['fonte'], 'titulo': i['titulo'], 'proposta': i['proposta'],
-                     'evidencia': i['evidencia'][:3], 'registros': registros_do_item(cfg, i)} for i in faltam[k:k + 10]]
+            lote = [{'id': i['id'], 'fonte': i['fonte'], 'titulo': controle.ocultar(i['titulo']),
+                     'proposta': controle.ocultar(i['proposta']),
+                     'evidencia': [controle.ocultar(e) for e in i['evidencia'][:3]], 'registros': registros_do_item(cfg, i)} for i in faltam[k:k + 10]]
             try:
                 r = subprocess.run(e['comando'], input=PEDIDO + json.dumps(lote, ensure_ascii=False),
                                    capture_output=True, text=True, cwd=Path(e['cwd']).expanduser() if e['cwd'] else None,

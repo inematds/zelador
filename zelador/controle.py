@@ -15,6 +15,17 @@ PARECIDOS = {
 }
 
 
+SEGREDO = re.compile(r'(?i)bearer\s+\S+|authorization\s*:\s*\S+(?:\s+\S+)?|://[^\s/:@]+:[^\s/@]+@'
+                     r'|\b(?:curl\s+)?-u\s+[^\s:]+:\S+|--(?:password|token|api-key)[= ]\S+'
+                     r'|\b(?:sk|ghp|xox[bpa])[-_][A-Za-z0-9_-]{10,}|\b\d{8,10}:[A-Za-z0-9_-]{30,}'
+                     r'|\b(?:password|passwd|senha|token|secret|api[_-]?key)\b\s*[=:]\s*\S+')
+
+
+def ocultar(texto):
+    """Tira o que tem cara de senha ou chave. Ajuda, mas não garante pegar tudo."""
+    return SEGREDO.sub('[oculto]', texto)
+
+
 def projetos(cfg):
     """Pastas de projeto: a própria raiz e as subpastas imediatas."""
     out = []

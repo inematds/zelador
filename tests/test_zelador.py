@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from zelador import config, iniciar, noite, painel, pauta
+from zelador import config, controle, iniciar, noite, painel, pauta
 
 
 class Base(unittest.TestCase):
@@ -212,6 +212,24 @@ class PistasDoProjeto(Base):
         txt = pauta.pistas_em_logs(self.proj / 'loja')
         self.assertIn('planilha nao encontrada', txt)
         self.assertNotIn('Erro antigo', txt)
+
+
+class SemPastaDeProjetos(Base):
+    def test_diagnostico_continua_e_nao_cria_nada(self):
+        self.cfg['geral']['raizes'] = [str(self.home / 'nao-existe')]
+        achados = iniciar.diagnosticar(self.cfg)
+        pecas = {a['peca'] for a in achados}
+        self.assertIn('journal', pecas)
+        self.assertNotIn('falhas', pecas)
+        iniciar.aplicar(self.cfg, achados)
+        self.assertFalse((self.home / 'nao-existe').exists())
+
+
+class Ocultar(unittest.TestCase):
+    def test_formas_comuns_de_senha(self):
+        for txt in ('postgres://admin:' + 'Segredo1@db/x', 'curl -u marcos:' + 'Segredo1 http://x',
+                    'Authorization: Basic ' + 'Segredo1', '--password=' + 'Segredo1'):
+            self.assertNotIn('Segredo1', controle.ocultar(txt), txt)
 
 
 class ErroNoLog(unittest.TestCase):
