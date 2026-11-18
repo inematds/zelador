@@ -1,0 +1,47 @@
+# Exemplo de ~/.config/zelador/zelador.toml — copie e ajuste. Tudo é opcional: sem arquivo, valem os padrões.
+
+[geral]
+raizes = ["~/projetos"]            # onde ficam seus projetos
+hub = ""                           # pasta dos arquivos gerais; vazio = a 1ª raiz
+dados = "~/.local/share/zelador"   # relatórios, pautas e decisões (fora do código)
+
+[arquivos]                         # nomes que contam como cada controle (ou caminhos completos)
+falhas = ["FALHAS.md"]
+licoes = ["LESSONS.md", "LICOES.md"]
+limites = ["LIMITES.md"]
+pendencias = ["PENDENCIAS.md"]
+
+[aviso]                            # a mensagem entra como último argumento
+comando = []                       # ex.: ["notify-send", "zelador"] ou ["bash", "/caminho/avisar-telegram.sh"]
+
+[noite]
+horas = 24
+repetido_grave = 20
+repetido_atencao = 5
+disco_atencao = 85
+disco_grave = 90
+journal = true
+cron = true
+ignorar = []                       # ex.: ["xrdp-chansrv"] — barulho que não é falha
+avisar_limpa = true
+
+[pauta]
+top = 12
+pendencia_parada_dias = 14
+recusa_semanas = 8
+limites_max = 8
+pendencias_max = 8
+recorrencia = "interna"            # ou o caminho do agente-que-aprende, se você usa
+grupos = []                        # ex.: [{nome = "atendimento", glob = "atende-*/FALHAS.md"}]
+relatorios = []                    # ex.: [{nome = "meu-bot", pasta = "~/projetos/meu-bot/relatorios"}]
+
+[explicar]                         # opcional: IA que explica cada item em português simples
+comando = []                       # ex.: ["claude", "-p"] (assinatura) — recebe o pedido no stdin
+cwd = ""
+max_chamadas = 3
+timeout = 420
+
+[painel]
+enderecos = ["127.0.0.1"]          # só a sua máquina; acrescente o IP da VPN (Tailscale) para o celular
+porta = 8810
+link = ""                          # o endereço que vai no aviso da segunda

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Lançador do zelador: roda o pacote deste repositório sem instalar nada.
+RAIZ="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+PYTHONPATH="$RAIZ${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m zelador "$@"

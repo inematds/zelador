@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pauta da semana · zelador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c10;--card:#15151b;--line:#2a2a33;--ink:#ececf1;--muted:#a3a3b2;--brand:#FACC15;--on-brand:#1a1206;
+--ok:#4ade80;--bad:#f87171;--info:#60a5fa;--wait:#c4b5fd}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 120px}
+h1{font:700 clamp(1.6rem,4vw,2.2rem)/1.15 Sora,Inter,sans-serif;margin:0 0 6px}
+h1 b{color:var(--brand)}
+.sub{color:var(--muted);margin:0 0 20px}
+.resumo{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.box{border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:130px;background:var(--card)}
+.box .n{font:700 1.5rem Sora,sans-serif}.box .r{color:var(--muted);font-size:.85rem}
+.filtros{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font:600 .75rem Inter;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.item{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:16px;margin-bottom:14px}
+.item.decidido{opacity:.72}
+.topo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.pill{border-radius:999px;padding:2px 10px;font:600 .75rem Inter;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--line);color:var(--muted)}
+.g-alta{color:var(--bg);background:var(--bad);border-color:var(--bad)}
+.g-media{color:var(--brand);border-color:var(--brand)}
+.titulo{font:600 1.05rem/1.4 Sora,Inter,sans-serif;margin:0 0 8px;word-break:break-word}
+.expl{margin:4px 0 10px;padding:12px 14px;border-left:3px solid var(--brand);background:#1b1b22;border-radius:10px}
+.expl dt{font:600 .75rem Inter;letter-spacing:.05em;text-transform:uppercase;color:var(--brand);margin-top:8px}
+.expl dt:first-child{margin-top:0}
+.expl dd{margin:2px 0 0}
+.simples{margin:0 0 6px}.simples b{color:var(--brand)}
+details{margin:6px 0 12px;color:var(--muted);font-size:.92rem}
+details summary{cursor:pointer;color:var(--ink)}
+details li{margin:4px 0;word-break:break-word}
+.acoes{display:flex;flex-wrap:wrap;gap:8px}
+.acoes button{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:10px;padding:9px 14px;font:600 .95rem Inter;cursor:pointer;min-height:42px}
+.acoes button[aria-pressed=true][data-d=aprovar]{background:var(--ok);color:#06210f;border-color:var(--ok)}
+.acoes button[aria-pressed=true][data-d=recusar]{background:var(--bad);color:#2a0707;border-color:var(--bad)}
+.acoes button[aria-pressed=true][data-d=analisar]{background:var(--info);color:#06142a;border-color:var(--info)}
+.acoes button[aria-pressed=true][data-d=adiar]{background:var(--wait);color:#160a2e;border-color:var(--wait)}
+textarea{width:100%;margin-top:10px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;min-height:44px;resize:vertical}
+.estado{font-size:.85rem;color:var(--muted);margin-left:auto}
+.barra{position:fixed;left:0;right:0;bottom:0;background:#0c0c10ee;border-top:1px solid var(--line);padding:12px 16px}
+.barra div{max-width:1000px;margin:0 auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.barra button{background:var(--brand);color:var(--on-brand);border:0;border-radius:10px;padding:11px 18px;font:700 1rem Inter;cursor:pointer}
+.vazio{color:var(--muted);text-align:center;padding:40px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Pauta da <b>semana</b></h1>
+  <p class="sub" id="sub"></p>
+  <div class="resumo" id="resumo"></div>
+  <div class="filtros" id="filtros" role="toolbar" aria-label="Filtrar por fonte"></div>
+  <div id="lista"></div>
+</main>
+<div class="barra"><div>
+  <span id="progresso"></span>
+  <button id="fechar" type="button">Fechar a semana</button>
+  <span id="aviso" role="status"></span>
+</div></div>
+<script>
+const D = __DADOS__;
+const P = D.pauta, DEC = D.decisoes || {};
+const ROT = {aprovar:'Aprovar', recusar:'Recusar', analisar:'Analisar', adiar:'Adiar'};
+let filtro = 'todas';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function cabecalho(){
+  const r = P.reincidencia || [];
+  const tend = r.length === 2 ? `${r[0]}% → ${r[1]}%` : (r[0] != null ? r[0] + '%' : '-');
+  document.getElementById('sub').textContent =
+    `Semana de ${P.semana} · gerada ${String(P.gerada||'').replace('T',' ')} · ${P.itens.length} proposta(s)` +
+    (P.erros_fontes && P.erros_fontes.length ? ` · fonte com erro: ${P.erros_fontes.join('; ')}` : '');
+  const fontes = {};
+  P.itens.forEach(i => fontes[i.fonte] = (fontes[i.fonte]||0) + 1);
+  const alta = P.itens.filter(i => i.gravidade === 'alta').length;
+  document.getElementById('resumo').innerHTML =
+    `<div class="box"><div class="n">${alta}</div><div class="r">prioridade alta</div></div>` +
+    (r.length ? `<div class="box"><div class="n">${esc(tend)}</div><div class="r">reincidência (semana passada → esta)</div></div>` : '') +
+    Object.entries(fontes).map(([f,n]) => `<div class="box"><div class="n">${n}</div><div class="r">${esc(f)}</div></div>`).join('');
+  const f = document.getElementById('filtros');
+  f.innerHTML = ['todas','pendentes', ...Object.keys(fontes)].map(x =>
+    `<button class="chip" data-f="${esc(x)}" aria-pressed="${x===filtro}">${esc(x)}</button>`).join('');
+  f.querySelectorAll('button').forEach(b => b.onclick = () => { filtro = b.dataset.f; cabecalho(); lista(); });
+}
+
+function lista(){
+  const el = document.getElementById('lista');
+  const itens = P.itens.filter(i => filtro === 'todas' || (filtro === 'pendentes' ? !(DEC[i.id]||{}).decisao : i.fonte === filtro));
+  if (!itens.length) { el.innerHTML = '<p class="vazio">Nada aqui.</p>'; progresso(); return; }
+  el.innerHTML = itens.map(i => {
+    const d = DEC[i.id] || {};
+    const g = i.gravidade === 'alta' ? 'g-alta' : i.gravidade === 'média' ? 'g-media' : '';
+    const extra = [i.vezes ? `${i.vezes}×` : '', (i.projetos||[]).join(', ')].filter(Boolean).join(' · ');
+    return `<article class="item ${d.decisao ? 'decidido' : ''}" data-id="${i.id}">
+      <div class="topo"><span class="pill ${g}">${esc(i.gravidade)}</span><span class="pill">${esc(i.fonte)}</span>
+        ${extra ? `<span class="pill">${esc(extra)}</span>` : ''}
+        ${i.ja_aprovado ? `<span class="pill">aprovado em ${esc(i.ja_aprovado)}</span>` : ''}
+        <span class="estado">${d.decisao ? 'Decidido: ' + ROT[d.decisao] + (d.enviado ? ' · enviado' : '') : 'Sem decisão'}</span></div>
+      <p class="titulo">${esc(i.titulo)}</p>
+      ${i.explicacao ? `<dl class="expl">
+        <dt>O que aconteceu</dt><dd>${esc(i.explicacao.aconteceu)}</dd>
+        <dt>Por que importa</dt><dd>${esc(i.explicacao.importa)}</dd>
+        <dt>O que a proposta faz</dt><dd>${esc(i.explicacao.muda)}</dd></dl>` : ''}
+      ${i.proposta_simples ? `<p class="simples"><b>A proposta, em resumo:</b> ${esc(i.proposta_simples)}</p>` : ''}
+      <details><summary>Proposta técnica</summary><p>${esc(i.proposta)}</p></details>
+      <details><summary>Evidência (${(i.evidencia||[]).length})</summary><ul>${(i.evidencia||[]).map(e => `<li>${esc(e)}</li>`).join('')}</ul></details>
+      <div class="acoes">${Object.entries(ROT).map(([k,v]) =>
+        `<button type="button" data-d="${k}" aria-pressed="${d.decisao===k}">${v}</button>`).join('')}</div>
+      <textarea placeholder="Nota (opcional): o que analisar, por que recusou, até quando adiar…" aria-label="Nota">${esc(d.nota||'')}</textarea>
+    </article>`;
+  }).join('');
+  el.querySelectorAll('.item').forEach(card => {
+    const id = card.dataset.id, ta = card.querySelector('textarea');
+    card.querySelectorAll('.acoes button').forEach(b => b.onclick = () => {
+      const atual = (DEC[id]||{}).decisao;
+      salvar(id, atual === b.dataset.d ? '' : b.dataset.d, ta.value);
+    });
+    ta.onchange = () => salvar(id, (DEC[id]||{}).decisao || '', ta.value, true);
+  });
+  progresso();
+}
+
+function progresso(){
+  const n = P.itens.filter(i => (DEC[i.id]||{}).decisao).length;
+  document.getElementById('progresso').textContent = `Decididas ${n} de ${P.itens.length}`;
+}
+
+async function salvar(id, decisao, nota, soNota){
+  const r = await fetch('/api/decidir', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, decisao, nota})});
+  const aviso = document.getElementById('aviso');
+  if (!r.ok) { aviso.textContent = 'Não salvou: ' + (await r.text()); return; }
+  if (!decisao && !nota) delete DEC[id]; else DEC[id] = {...(DEC[id]||{}), decisao, nota};
+  aviso.textContent = soNota ? 'Nota salva.' : 'Salvo.';
+  if (!soNota) lista();
+}
+
+document.getElementById('fechar').onclick = async () => {
+  const aviso = document.getElementById('aviso');
+  aviso.textContent = 'Enviando…';
+  const r = await fetch('/api/fechar', {method:'POST'});
+  const j = await r.json();
+  aviso.textContent = j.ok ? (j.enviados ? `${j.enviados} item(ns) foram para o pendencias.md e o bot avisou.` : 'Nada novo para enviar.') : 'Falhou: ' + (j.erro||'');
+};
+
+cabecalho(); lista();
+</script>
+</body>
+</html>
