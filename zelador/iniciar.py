@@ -5,6 +5,7 @@ Para cada peça há três saídas:
   PROPOSTA    — existe algo parecido com outro nome ou formato: propõe mapear na config, nunca cria um gêmeo;
   CRIAR       — não existe nada: cria a partir do modelo (só com --aplicar, nunca sobrescreve).
 """
+import getpass
 import re
 import shutil
 import subprocess
@@ -119,6 +120,18 @@ def diagnosticar(cfg):
     if not cfg['explicar']['comando']:
         add('explicar', 'info', 'explicação por IA desligada: cada item mostra o resumo fixo. Para ligar, '
                                 '`explicar.comando` com um comando que lê o pedido no stdin (ex.: ["claude", "-p"])')
+    usuario = getpass.getuser()
+    linger = sh(['loginctl', 'show-user', usuario, '-p', 'Linger']).strip()
+    if linger == 'Linger=no':
+        add('agenda', 'proposta', 'sem ninguém conectado, os agendamentos deste usuário não rodam: em servidor, ative com '
+                                  f'`sudo loginctl enable-linger {usuario}` (o zelador não faz isso sozinho)')
+    sem_log = [l for l in cron.splitlines() if re.match(r'\s*(@\w+|[\d*/,-]+(\s+[\w*/,-]+){4})\s', l)
+               and not re.search(r'>>?\s*\S+\.log', l)]
+    if sem_log:
+        add('cron', 'proposta', f'{len(sem_log)} tarefa(s) do cron sem arquivo de registro: a madrugada não vê se elas '
+                                'falharam. Acrescente `>> arquivo.log 2>&1` a cada uma')
+    add('alcance', 'info', 'a ronda vê as rotinas desta conta de usuário; rotinas do sistema, do administrador ou de '
+                           'outra conta ficam de fora')
     ag = sh(['systemctl', '--user', 'list-unit-files', '--no-pager', '--plain', '--no-legend', 'zelador-*'])
     if 'zelador-noite.timer' in ag:
         add('agenda', 'tem', 'timers do zelador instalados')

@@ -4,7 +4,7 @@ import os
 import tomllib
 from pathlib import Path
 
-VERSAO = '1.0.0'
+VERSAO = '1.0.2'
 
 PADRAO = {
     'geral': {
@@ -31,6 +31,7 @@ PADRAO = {
         'cron': True,
         'ignorar': [],                     # unidades/identificadores que são só barulho
         'avisar_limpa': True,              # manda uma linha mesmo quando a noite foi limpa
+        'trechos': True,                   # false = aviso e relatório sem trechos dos registros (dados sensíveis)
     },
     'pauta': {
         'top': 12,

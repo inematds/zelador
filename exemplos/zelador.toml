@@ -24,6 +24,7 @@ journal = true
 cron = true
 ignorar = []                       # ex.: ["xrdp-chansrv"] — barulho que não é falha
 avisar_limpa = true
+trechos = true                     # false = sem trechos dos registros no aviso e no relatório
 
 [pauta]
 top = 12

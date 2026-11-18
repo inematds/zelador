@@ -78,7 +78,8 @@ def de_madrugadas(cfg, hoje):
         d = hoje - dt.timedelta(days=i)
         pj, pm = pasta / f'{d:%F}.json', pasta / f'{d:%F}.md'
         if pj.is_file():
-            graves = json.loads(pj.read_text()).get('grave', [])
+            dia = json.loads(pj.read_text())
+            graves = dia.get('grave', []) + [a.split(':')[0] for a in dia.get('atencao', []) if a.startswith(('tarefa agendada', 'cron '))]
         elif pm.is_file():
             bloco = pm.read_text().split('## Grave', 1)[-1].split('## Atenção', 1)[0]
             graves = [l[2:] for l in bloco.splitlines() if l.startswith('- ') and l != '- nada']
@@ -86,7 +87,7 @@ def de_madrugadas(cfg, hoje):
             continue
         noites += 1
         for g in graves:
-            chave = re.sub(r'\d+×', 'N×', re.sub(r'\d+ processo', 'N processo', g))
+            chave = re.sub(r'\d+×', 'N×', re.sub(r'\d+ programa', 'N programa', g))
             cont.setdefault(chave, []).append(f'{d:%d/%m}: {g}')
     return [item('madrugadas', k[:140], 'Ver o log, achar a causa e pôr a proteção que falta; registrar no FALHAS.md.',
                  ev, 'alta' if len(ev) >= 2 else 'média', vezes=len(ev), noites=noites) for k, ev in cont.items()]

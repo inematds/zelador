@@ -108,7 +108,7 @@ function lista(){
         <dt>Por que importa</dt><dd>${esc(i.explicacao.importa)}</dd>
         <dt>O que a proposta faz</dt><dd>${esc(i.explicacao.muda)}</dd></dl>` : ''}
       ${i.proposta_simples ? `<p class="simples"><b>A proposta, em resumo:</b> ${esc(i.proposta_simples)}</p>` : ''}
-      <details><summary>Proposta técnica</summary><p>${esc(i.proposta)}</p></details>
+      <details><summary>Detalhe técnico</summary><p>${esc(i.proposta)}</p></details>
       <details><summary>Evidência (${(i.evidencia||[]).length})</summary><ul>${(i.evidencia||[]).map(e => `<li>${esc(e)}</li>`).join('')}</ul></details>
       <div class="acoes">${Object.entries(ROT).map(([k,v]) =>
         `<button type="button" data-d="${k}" aria-pressed="${d.decisao===k}">${v}</button>`).join('')}</div>

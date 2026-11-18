@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sua automação falhou de madrugada e ninguém viu? Zelador te avisa de manhã</title>
+<meta name="description" content="Grátis: toda manhã o Zelador avisa o que falhou e, toda segunda, traz o que vale consertar. Você decide o que fazer.">
+<link rel="alternate" hreflang="pt-BR" href="https://inematds.github.io/zelador/guia/">
+<link rel="alternate" hreflang="en" href="https://inematds.github.io/zelador/guia/en/">
+<link rel="alternate" hreflang="es" href="https://inematds.github.io/zelador/guia/es/">
+<meta property="og:title" content="Sua automação falhou de madrugada e ninguém viu? Zelador te avisa de manhã">
+<meta property="og:description" content="Grátis: toda manhã o Zelador avisa o que falhou e, toda segunda, traz o que vale consertar. Você decide o que fazer.">
+<meta property="og:image" content="https://inematds.github.io/zelador/guia/assets/banner.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
+    --txt:#e9e9ee; --mut:#9a9aa6; --amb:#FACC15; --amb2:#f0c070; --sky:#38bdf8; --pro:#cbd5e1;
+    --fill:#FACC15; --tint:rgba(250,204,21,.12); --ok:#7CE0C6; --bad:#F0918A;
+    color-scheme:dark;
+  }
+  body.light{
+    --bg:#f6f7f9; --bg2:#eceef2; --card:#ffffff; --line:#e1e3ea;
+    --txt:#1a1a22; --mut:#5b5b68; --amb:#a16207; --amb2:#a16207; --sky:#0369a1; --pro:#b45309;
+    --fill:#FACC15; --tint:#FEF9C3; --ok:#0E6B55; --bad:#A83426;
+    color-scheme:light;
+  }
+  body.light .hero .glow{opacity:.5}
+  body.light pre{background:#0e0e14;color:#d6d6e0}
+  body.light pre .c{color:#8a8a98}
+  body.light pre .k{color:#f0c070}
+  body.light nav{background:rgba(246,247,249,.85)}
+  body.light .amb{color:var(--txt);background:linear-gradient(transparent 55%,#FACC15 55%)}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:Sora,sans-serif;line-height:1.15;margin:0}
+  a{color:var(--amb);text-decoration:none}
+  body.light main a:not(.btn),body.light footer a{color:#854d0e;text-decoration:underline;text-decoration-color:#FACC15;text-decoration-thickness:3px}
+  code,pre{font-family:"JetBrains Mono",monospace}
+  p code,li code,td code{font-size:.9em;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.05em .35em}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  .mut{color:var(--mut)} .amb{color:var(--amb)}
+  .chip{display:inline-block;font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amb);font-weight:600;font-family:Sora}
+  nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:rgba(12,12,16,.78);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+  nav .brand{display:flex;align-items:center;gap:8px;font-family:Sora;font-weight:800;letter-spacing:-.02em;color:var(--amb);white-space:nowrap}
+  nav .brand .emoji{font-size:1.25rem}
+  nav .sep{color:var(--mut);opacity:.45}
+  nav .inema{color:var(--sky);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .inema:hover{filter:brightness(1.15)}
+  nav .pro{color:var(--pro);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .pro:hover{filter:brightness(1.15)}
+  nav .clubpro{display:inline-flex;align-items:center;gap:6px}
+  nav .links{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:.92rem}
+  nav .links a.sec{color:var(--mut)} nav .links a.sec:hover{color:var(--txt)}
+  .lang{display:inline-flex;gap:2px;font-family:Sora;font-size:.78rem}
+  .lang a{color:var(--mut);padding:.2em .45em;border-radius:6px} .lang a.on{color:var(--amb);background:var(--tint)}
+  .tgl{background:var(--bg2);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem}
+  .tgl:hover{border-color:var(--amb)}
+  .btn{display:inline-block;background:var(--fill);color:#1a1206;font-weight:600;padding:.6em 1.05em;border-radius:10px;font-family:Sora}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  nav .links a.sec{white-space:nowrap}
+  @media(max-width:1360px){nav .links a.opt{display:none}}
+  @media(max-width:860px){nav .links a.sec{display:none}}
+  @media(max-width:520px){nav .wrap{gap:8px;padding:8px 14px;height:auto;flex-wrap:wrap} nav .links{gap:8px;margin-left:0;width:100%;justify-content:space-between} nav .btn{padding:.45em .7em;font-size:.82rem} .tgl{width:34px;height:34px}}
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero .glow{position:absolute;inset:-40% -20% auto auto;width:70%;height:600px;background:radial-gradient(closest-side,rgba(250,204,21,.18),transparent 70%);pointer-events:none}
+  .hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:74px 22px}
+  .hero h1{font-size:clamp(2.1rem,4.6vw,3.3rem);font-weight:800;letter-spacing:-.025em}
+  .hero p.lead{font-size:1.15rem;color:var(--mut);margin:1.1em 0 1.6em;max-width:44ch}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .hero figure{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000}
+  .hero figure img{width:100%;height:auto;display:block}
+  .resumo{padding:38px 0 34px;border-bottom:1px solid var(--line)}
+  .resumo p{font-size:1.12rem;line-height:1.7;max-width:74ch;margin:.55em 0 0}
+  @media(max-width:780px){.hero .wrap{grid-template-columns:1fr;padding:48px 22px}}
+  section{padding:62px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em}
+  section .sub{color:var(--mut);margin:.6em 0 2em;max-width:66ch}
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
+  .card h3{font-size:1.05rem;margin-bottom:.4em}
+  .card p{color:var(--mut);font-size:.95rem;margin:0}
+  .card p+p{margin-top:.6em}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .flow span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:.45em .9em;font-size:.85rem;font-family:Sora;font-weight:600}
+  .flow .arr{color:var(--amb);border:none;background:none;padding:0 .1em}
+  pre{background:#0a0a0e;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font-size:.86rem;line-height:1.6;color:#d6d6e0;margin:.4em 0 0}
+  pre .c{color:#7d7d8a} pre .k{color:var(--amb2)} pre .s{color:#9ece6a}
+  .step{display:grid;grid-template-columns:46px minmax(0,1fr);gap:16px;margin-bottom:28px}
+  .step>div{min-width:0}
+  .step .b{width:46px;height:46px;border-radius:12px;background:var(--fill);color:#1a1206;font-family:Sora;font-weight:800;font-size:1.25rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;margin-bottom:.3em}
+  .step p{color:var(--mut);margin:.2em 0 .5em}
+  .quem{display:inline-block;font-family:Sora;font-size:.75rem;letter-spacing:.06em;color:var(--txt);background:var(--tint);border:1px solid var(--line);border-radius:999px;padding:.1em .7em;margin-left:.5em;vertical-align:middle;font-weight:600}
+  footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:4px}
+  /* números */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
+  @media(max-width:720px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .stat b{display:block;font:800 clamp(1.9rem,4vw,2.6rem)/1.05 Sora,sans-serif;letter-spacing:-.02em;color:var(--amb)}
+  body.light .stat b{color:var(--txt)}
+  .stat span{display:block;color:var(--mut);font-size:.93rem;margin-top:.5em}
+  .fonte{font-size:.86rem;color:var(--mut);margin-top:14px;max-width:80ch}
+  /* trocas */
+  .troca{display:grid;grid-template-columns:64px minmax(0,1fr);gap:18px;padding:26px 0;border-top:1px solid var(--line)}
+  .troca:first-of-type{border-top:none}
+  .troca .n{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;font:800 1.6rem Sora,sans-serif;color:var(--amb)}
+  body.light .troca .n{color:var(--txt);background:var(--fill);border-color:var(--fill)}
+  .troca h3{font-size:1.3rem;margin-bottom:.35em}
+  .troca p{margin:.35em 0;max-width:72ch}
+  .troca .ex{margin-top:.8em;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--fill);border-radius:10px;padding:12px 16px;font-size:.95rem;color:var(--mut);max-width:76ch}
+  .troca .ex b{color:var(--txt)}
+  @media(max-width:540px){.troca{grid-template-columns:1fr}}
+  /* três finais */
+  .vs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px;max-width:900px}
+  @media(max-width:720px){.vs{grid-template-columns:1fr}}
+  .vs div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:.93rem}
+  .vs strong{display:block;font-family:Sora;margin-bottom:.25em}
+  .vs .r{display:block;margin-top:.5em;font-weight:600}
+  .vs .r.bad{color:var(--bad)} .vs .r.ok{color:var(--ok)}
+  .card ul{margin:8px 0 0;padding-left:20px}.card li{margin:5px 0}
+  /* prova */
+  .prova{background:var(--card);border:1px solid var(--amb);border-radius:16px;padding:26px 26px 22px;margin-top:6px}
+  body.light .prova{border-color:#EAB308}
+  .tl{list-style:none;margin:0;padding:0;counter-reset:t}
+  .tl li{position:relative;padding:0 0 18px 48px;counter-increment:t}
+  .tl li::before{content:counter(t);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:10px;background:var(--fill);color:#1a1206;font:800 .95rem/32px Sora,sans-serif;text-align:center}
+  .tl li::after{content:"";position:absolute;left:15px;top:36px;bottom:4px;width:2px;background:var(--line)}
+  .tl li:last-child::after{display:none}
+  .tl b{font-family:Sora}
+  blockquote{margin:6px 0 0;padding:14px 18px;border-left:3px solid var(--fill);background:var(--bg2);border-radius:0 10px 10px 0;font-size:1.02rem}
+  .prova .rod{font-size:.86rem;color:var(--mut);margin-top:14px}
+  /* parte técnica */
+  .techhead{background:var(--bg2);border-top:3px solid var(--fill);padding:58px 0 8px}
+  .techhead h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em;margin:.3em 0 0}
+  .techhead .sub{color:var(--mut);margin:.6em 0 1.2em;max-width:66ch}
+  .techzone{background:var(--bg2)}
+  .techzone .card{background:var(--card)}
+  .tbl{width:100%;border-collapse:collapse;font-size:.93rem}
+  .tbl th,.tbl td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tbl th{font-family:Sora;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+  @media(max-width:600px){.tbl thead{display:none} .tbl tr{display:block;border-bottom:1px solid var(--line);padding:6px 0} .tbl tr:last-child{border-bottom:none} .tbl td{display:block;border:none;padding:4px 14px}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#top"><span class="emoji">🔦</span> Zelador</a>
+  <span class="sep">|</span>
+  <span class="clubpro">
+    <a class="inema" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
+    <span class="sep">-</span>
+    <a class="pro" href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
+  </span>
+  <div class="links">
+    <a class="sec" href="#explicado">O ganho</a>
+    <a class="sec" href="#dia">No seu dia</a>
+    <a class="sec opt" href="#como">Como funciona</a>
+    <a class="sec opt" href="#serve">Serve para você?</a>
+    <a class="sec" href="#comecar">Como começar</a>
+    <a class="sec opt" href="#prova">A prova</a>
+    <span class="lang"><a class="on" href="./">PT</a><a href="en/">EN</a><a href="es/">ES</a></span>
+    <button class="tgl" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">🌙</button>
+    <a class="btn ghost" href="https://github.com/inematds/zelador" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</div></nav>
+
+<header class="hero" id="top">
+  <div class="glow"></div>
+  <div class="wrap">
+    <div>
+      <span class="chip">Zelador · grátis · para computadores com Linux</span>
+      <h1>Sua automação falhou de madrugada e <span class="amb">ninguém viu?</span></h1>
+      <p class="lead">Uma cópia de segurança pode passar dias dando erro sem ninguém saber. Com o Zelador, de manhã você vê o que deu erro nas rotinas da sua máquina. Na segunda, decide o que vale consertar.</p>
+      <div class="cta">
+        <a class="btn" href="#explicado">O que você ganha</a>
+        <a class="btn ghost" href="#comecar">Como começar</a>
+      </div>
+    </div>
+    <figure><img src="assets/banner.jpg" alt="Zelador: saiba o que falhou de madrugada e decida o que vale consertar"></figure>
+  </div>
+</header>
+
+<main>
+<section id="resumo" class="resumo"><div class="wrap">
+  <span class="chip">Em resumo</span>
+  <p>Quem deixa robôs e rotinas de IA trabalhando sozinhos só descobre o problema quando alguém reclama. <strong>O Zelador é um programa gratuito que fica de olho nisso por você:</strong> toda madrugada ele confere o que deu erro no seu computador, e toda semana junta o que vale melhorar num formulário simples, para você decidir. Se você ainda não anota o que dá errado, ele cria as listas. Se já anota, ele usa as suas. Para instalar, basta pedir à sua IA.</p>
+  <figure style="margin:22px 0 0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000"><img src="assets/banner-grade.jpg" alt="Zelador: aviso toda manhã, erro que se repete, pauta da semana, explicação simples, você decide, usa o que você já tem" loading="lazy" style="width:100%;display:block"></figure>
+</div></section>
+
+<section id="explicado"><div class="wrap">
+  <span class="chip">O ganho</span>
+  <h2>Antes e depois do <span class="amb">Zelador</span></h2>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card"><h3>😩 Sem o Zelador</h3><p>Uma rotina dá erro e nada avisa. Você descobre dias depois, quando o trabalho não chegou ou o cliente reclamou.</p><p>O mesmo erro volta, alguém conserta de novo, e a lição fica esquecida numa anotação que ninguém relê.</p></div>
+    <div class="card"><h3>😌 Com o Zelador</h3><p>De manhã chega um aviso curto, no Telegram ou na tela do computador: o que falhou, o que está se repetindo, ou que a noite foi limpa.</p><p>Na segunda, você abre um formulário com o que vale consertar, o mais importante primeiro, e decide item por item.</p></div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>🔔 Você sabe primeiro</h3><p>A rotina que termina em falha aparece no aviso da manhã seguinte, em vez de esperar alguém reclamar.</p></div>
+    <div class="card"><h3>🔁 O erro repetido aparece</h3><p>Ele mostra o que já aconteceu várias vezes e propõe uma proteção de verdade, como uma conferência automática antes de rodar. Se você aprovar, é só pedir à sua IA para fazer.</p></div>
+    <div class="card"><h3>🧭 Você continua no comando</h3><p>Nada é consertado sem a sua decisão. Você aprova, recusa, deixa para analisar ou adia.</p></div>
+  </div>
+</div></section>
+
+<section id="dia"><div class="wrap">
+  <span class="chip">No seu dia a dia</span>
+  <h2>Como isso muda o seu <span class="amb">dia</span></h2>
+  <p class="sub">Você não precisa programar para sentir a diferença. Veja situações comuns de quem deixa rotinas trabalhando sozinhas.</p>
+  <div class="grid g3">
+    <div class="card"><h3>💾 A cópia de segurança</h3><p><strong>Hoje:</strong> ela dá erro há três noites e você nem sabe.</p><p><strong>Com o Zelador:</strong> se ela termina em falha, o aviso da manhã seguinte mostra. Se ele não tiver como verificar, o aviso também diz.</p></div>
+    <div class="card"><h3>🔁 O erro de sempre</h3><p><strong>Hoje:</strong> o mesmo problema volta, e a cada vez alguém resolve à mão.</p><p><strong>Com o Zelador:</strong> a sua IA passa a anotar as falhas que aparecem no trabalho com ela. Quando uma se repete, ele propõe uma conferência automática para barrar o erro.</p></div>
+    <div class="card"><h3>📝 O "vejo depois"</h3><p><strong>Hoje:</strong> a tarefa entra na lista e fica lá por meses.</p><p><strong>Com o Zelador:</strong> a tarefa anotada com data, parada há duas semanas, volta para você decidir: fazer, adiar ou deixar de lado.</p></div>
+  </div>
+  <div class="prova" style="margin-top:22px">
+    <ol class="tl">
+      <li><b>De madrugada · ele confere</b><br><span class="mut">rotinas que deram erro, falta de memória, erros repetidos, disco quase cheio.</span></li>
+      <li><b>De manhã · você recebe o resumo</b><br><span class="mut">no Telegram ou na tela do computador, como você escolher. Noite limpa, uma linha só. Se não conseguiu olhar alguma parte, ele diz qual.</span></li>
+      <li><b>Na segunda · a pauta da semana</b><br><span class="mut">um link para o formulário, com o mais importante primeiro. Ele abre no computador onde o Zelador está: abra o Telegram nesse computador e clique.</span></li>
+      <li><b>Quando puder · você decide</b><br><span class="mut">marque cada item e toque em "Fechar a semana": o aprovado e o que pediu para analisar vão para a sua lista de tarefas, e aí é só pedir à sua IA para fazer. O recusado some por 8 semanas. O adiado continua aparecendo enquanto o problema existir.</span></li>
+    </ol>
+  </div>
+</div></section>
+
+<!-- VIDEO: entra o explicavideo do projeto quando publicado -->
+
+<section id="como"><div class="wrap">
+  <span class="chip">Como funciona</span>
+  <h2>Um zelador de prédio, <span class="amb">sem jargão</span></h2>
+  <p class="sub">Pense no zelador de um prédio: ele faz a ronda à noite, anota o que achou e, depois, pergunta ao síndico o que deve ser consertado.</p>
+  <div class="grid g3">
+    <div class="card"><h3>🔦 1. A ronda da noite</h3><p>Toda madrugada ele lê o que o seu computador registrou e separa o que é <strong>grave</strong> do que só merece <strong>atenção</strong>. Depois, manda o resumo.</p></div>
+    <div class="card"><h3>📋 2. A pauta da semana</h3><p>Toda segunda ele junta os erros que voltam, as noites ruins, o que te travou e as tarefas esquecidas, com a prioridade de cada um.</p></div>
+    <div class="card"><h3>✍️ 3. A sua decisão</h3><p>Com a sua IA ligada, os itens contam o que aconteceu, por que importa e o que a proposta faz. Sem ela, vem um resumo pronto. Quem decide é você.</p></div>
+  </div>
+  <figure style="margin:22px auto 0;max-width:430px;border-radius:16px;overflow:hidden;border:1px solid var(--line)"><img src="assets/painel.jpg" alt="Formulário do Zelador com uma proposta explicada e os botões Aprovar, Recusar, Analisar e Adiar" loading="lazy" style="width:100%;display:block"></figure>
+  <p class="fonte" style="text-align:center;margin:10px auto 0">O formulário, com dados de demonstração.</p>
+  <div class="card" style="margin-top:22px"><h3>🌙 Um exemplo do aviso da manhã</h3><blockquote>Madrugada 2026-11-23: 1 GRAVE, 0 atenção<br>• a rotina backup-diario falhou 1×<br>Relatório: endereço do arquivo com os detalhes<br>Para entender ou consertar, cole este aviso na sua IA.</blockquote><p style="margin-top:10px">O aviso é curto e direto. Se quiser a explicação ou o conserto, é só fazer o que ele diz: colar na sua IA.</p></div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card"><h3>🧩 Ele se adapta ao que você tem</h3><p><strong>Não anota nada ainda?</strong> Ele cria quatro listas simples: o que deu errado, o que você aprendeu, o que te travou e o que ficou para depois.</p><p><strong>Já anota com outros nomes?</strong> Se ainda não tem as listas dele, adota as suas sem criar cópia, e a sua IA confere se o formato serve.</p><p><strong>Já tem outros alertas?</strong> Ele sugere aproveitar o que eles produzem.</p></div>
+    <div class="card"><h3>🔒 O que ele não faz</h3><p>Não conserta nada sozinho: ele acha, explica e propõe.</p><p>Não escreve por cima do que é seu.</p><p>Não manda seus dados para um serviço dele, porque não existe um. Só sai da máquina o que você ligar: o aviso e a explicação pela sua IA.</p></div>
+  </div>
+</div></section>
+
+<section id="serve"><div class="wrap">
+  <span class="chip">Antes de instalar</span>
+  <h2>Serve para <span class="amb">você?</span></h2>
+  <p class="sub">Melhor saber agora o que ele enxerga e o que não enxerga.</p>
+  <div class="grid g2">
+    <div class="card"><h3>✅ Serve se</h3><ul>
+      <li>Suas rotinas rodam num computador com <strong>Linux</strong>, um sistema como o Windows, muito usado em máquinas que ficam sempre ligadas, e foram agendadas com o <strong>mesmo usuário</strong> com que você entra nele. Não sabe? A verificação da sua IA responde antes de instalar.</li>
+      <li>Essa máquina costuma ficar ligada. Se estiver desligada na hora da ronda, ele faz a ronda quando ela voltar. Se ninguém estiver com o usuário aberto, porque ela reiniciou ou você saiu, ele não roda até um ajuste feito uma vez, com a senha de administrador. A verificação inicial da sua IA avisa isso e também se falta algum componente.</li>
+      <li>Você usa o Claude Code ou o Codex, que fazem a instalação e conferem se a máquina tem o que ele precisa.</li>
+    </ul></div>
+    <div class="card"><h3>🚫 Ele não vê</h3><ul>
+      <li>O que roda em serviços na internet, como um post agendado dentro de uma rede social.</li>
+      <li>Rotinas do administrador ou de outro usuário do computador.</li>
+      <li>Tarefa agendada que não guarda registro, um arquivo onde ela anota o que fez. Nesse caso, o aviso diz que não conseguiu verificar.</li>
+      <li>Rotina que anota um erro mas termina como se tivesse dado certo.</li>
+      <li>Erro que a tarefa não escreve no registro, ou escreve com palavras que ele não reconhece. Peça à sua IA para conferir cada rotina na instalação.</li>
+      <li>Rotinas que rodam na nuvem, mesmo as criadas pela sua IA.</li>
+      <li>Uma rotina que simplesmente deixou de rodar, sem registrar erro.</li>
+      <li>Um resultado errado que terminou sem erro, a não ser que essa falha seja anotada.</li>
+    </ul></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>📱 E no celular ou em outro computador?</h3><p>O aviso chega onde você escolher. O formulário abre só na máquina onde o Zelador está. Para abrir no celular ou em outro computador, é preciso uma rede privada, uma ligação segura entre os seus aparelhos. A sua IA pode te orientar.</p></div>
+    <div class="card"><h3>💻 Mac e Windows</h3><p>Ainda não testamos. Fora do Linux ele enxergaria bem menos, então por enquanto não conte com ele nesses sistemas.</p></div>
+    <div class="card" style="grid-column:1/-1"><h3>🔕 E se nenhuma mensagem chegar?</h3><p>Se você ligou o aviso, desconfie. Ele manda uma linha até nas noites limpas, justamente para o silêncio significar que algo impediu a ronda. Nesse caso, peça à sua IA para conferir.</p></div>
+  </div>
+</div></section>
+
+<section id="comecar"><div class="wrap">
+  <span class="chip">Como começar</span>
+  <h2>Peça para a sua IA <span class="amb">analisar primeiro</span></h2>
+  <p class="sub">Você não instala nada à mão. A própria IA lê o Zelador, olha o que você já tem e explica o que faria.</p>
+  <div class="grid g3">
+    <div class="card"><h3>1. Abra a sua IA</h3><p>O Claude Code ou o Codex (duas IAs que trabalham no computador), na máquina onde as rotinas rodam, na pasta onde ficam os seus projetos. Se não souber qual é, abra onde costuma abrir: o pedido manda a IA procurar. Se as rotinas estão em outra máquina e você não sabe entrar nela, chame quem montou.</p></div>
+    <div class="card"><h3>2. Cole o pedido abaixo</h3><p>Ela baixa uma cópia do Zelador numa pasta à parte e faz só uma verificação: não muda seus arquivos nem instala nada.</p></div>
+    <div class="card"><h3>3. Diga sim ao que fizer sentido</h3><p>Com o seu sim, ela instala numa pasta permanente, liga o aviso, agenda a ronda, liga a explicação simples, se você quiser, e passa a anotar as falhas que aparecerem no trabalho com ela.</p></div>
+  </div>
+  <div class="pedido" style="margin-top:20px;position:relative">
+<pre id="pedidoTxt" style="white-space:pre-wrap">Leia o projeto Zelador em https://github.com/inematds/zelador (o README explica tudo, inclusive a instalação).
+Baixe uma cópia numa pasta temporária, fora dos meus projetos, e rode só o diagnóstico, a partir da pasta onde ficam os meus projetos (procure, se eu não souber). Não altere nada.
+Depois me responda em português simples:
+1. Ele enxerga as rotinas que rodam aqui? O que ele veria, o que não veria, e ele continua rodando sem ninguém conectado?
+2. O que eu já tenho e ele pode aproveitar?
+3. O que falta e ele criaria?
+4. Por onde eu receberia os avisos, e o que eu precisaria fazer para isso?
+Não instale nem mude nada ainda. Mostre o plano e espere eu dizer sim.
+Quando eu disser sim, instale numa pasta permanente, nunca na temporária.</pre>
+    <button class="btn" id="copiarPedido" style="margin-top:10px">Copiar o pedido</button>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>🛠️ Prefere instalar à mão?</h3><p>Os comandos e os detalhes estão na página técnica do projeto.</p><p><a class="btn ghost" href="https://github.com/inematds/zelador#instalação-técnica" target="_blank" rel="noopener">Ver a instalação técnica</a></p></div>
+</div></section>
+
+<section id="prova"><div class="wrap">
+  <span class="chip">A prova</span>
+  <h2>Na primeira rodada completa, ele já achou <span class="amb">problemas reais</span></h2>
+  <p class="sub">Rodamos o Zelador numa máquina real, que tem dezenas de rotinas automáticas e um bom histórico de falhas anotadas.</p>
+  <div class="stats">
+    <div class="stat"><b>3</b><span>rotinas agendadas com erro nas últimas 24 horas</span></div>
+    <div class="stat"><b>4</b><span>programas encerrados por falta de memória</span></div>
+    <div class="stat"><b>26</b><span>propostas na primeira pauta, 5 delas de prioridade alta</span></div>
+  </div>
+  <p class="fonte">Primeira ronda e primeira pauta feitas em 17/11/2026, depois da instalação, olhando as 24 horas anteriores, numa única máquina. Os relatórios não são publicados porque trazem dados dela. Quem começa com as listas vazias terá uma pauta bem menor nas primeiras semanas.</p>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <span class="chip">Perguntas comuns</span>
+  <h2>Antes de você <span class="amb">começar</span></h2>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card"><h3>Preciso saber programar?</h3><p>Não. Você cola o pedido, lê o plano e diz sim ou não. Quem instala é a sua IA.</p></div>
+    <div class="card"><h3>Quanto custa?</h3><p>Nada. O Zelador é grátis. A explicação por IA é opcional e consome um pouco do uso da IA que você já tem.</p></div>
+    <div class="card"><h3>Como recebo o aviso?</h3><p>Você escolhe na instalação. O melhor é o Telegram, que fica esperando você de manhã: é preciso criar um robô lá, e a sua IA te orienta. Também dá para usar a notificação na tela, que aparece de madrugada e pode passar batida, ou só guardar o relatório.</p></div>
+    <div class="card"><h3>E se eu já anoto tudo?</h3><p>Ele nunca escreve por cima do que é seu. A verificação inicial mostra o que dá para aproveitar e o que precisaria de ajuste, e nada muda antes do seu sim.</p></div>
+    <div class="card"><h3>Meus dados saem do computador?</h3><p>O Zelador não tem nenhum serviço na internet. Só sai o que você ligar, mas atenção: o aviso pode levar trechos dos registros, e a explicação envia à sua IA os detalhes de cada item. Se os registros têm dados de clientes ou pacientes, peça à IA para tirar os trechos do aviso e deixar a explicação desligada.</p></div>
+    <div class="card"><h3>Ele conserta os erros sozinho?</h3><p>Não, de propósito. Ele traz a proposta, e você decide. Depois, é só pedir à sua IA para fazer o que aprovou.</p></div>
+  </div>
+  <p class="fonte" style="margin-top:22px">E você: se uma rotina sua desse erro hoje à noite, quanto tempo levaria para descobrir? Grátis no inema.club, direto na internet.</p>
+  <p style="margin-top:14px"><a class="btn" href="#comecar">Como começar</a></p>
+</div></section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="pill">Claude Code</div><div class="pill">Codex</div><div class="pill">Grátis</div>
+    <p style="margin-top:18px">Zelador · grátis no inema.club, direto na internet ·
+      <a href="https://github.com/inematds/zelador">inematds/zelador</a> ·
+      <a href="https://inema.club">INEMA.CLUB</a></p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var KEY='zelador-theme';
+    var b=document.body, t=document.getElementById('themeToggle');
+    try{ if(localStorage.getItem(KEY)==='light'){ b.classList.add('light'); t.textContent='☀️'; } }catch(e){}
+    t.addEventListener('click',function(){
+      var light=b.classList.toggle('light');
+      t.textContent=light?'☀️':'🌙';
+      try{ localStorage.setItem(KEY, light?'light':'dark'); }catch(e){}
+    });
+  })();
+  (function(){
+    var bt=document.getElementById('copiarPedido'), tx=document.getElementById('pedidoTxt');
+    if(!bt||!tx) return;
+    bt.addEventListener('click',function(){
+      try{ navigator.clipboard.writeText(tx.textContent).then(function(){ bt.textContent='Copiado ✓'; setTimeout(function(){bt.textContent='Copiar o pedido';},2000); }); }catch(e){}
+    });
+  })();
+</script>
+</body>
+</html>

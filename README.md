@@ -1,24 +1,60 @@
-# zelador
+# 🔦 Zelador
 
-Toda madrugada ele olha se alguma rotina falhou, se faltou memória ou se um erro está se repetindo, e te avisa.
-Toda segunda ele junta as propostas de melhoria da semana num formulário: você lê a explicação em português
-simples e aprova, recusa, pede análise ou adia. O que você aprovou vira pendência.
+**🇧🇷 [Português](README.md) · 🇺🇸 [English](README.en.md) · 🇪🇸 [Español](README.es.md)**
 
-Se você ainda não tem arquivo de falhas, de limites ou de pendências, ele cria. Se já tem algo com outro nome
-(`ERRORS.md`, `TODO.md`…), ele usa o seu em vez de criar outro. Se você já tem monitores, ele propõe ler o
-relatório deles em vez de duplicar.
+[![Zelador](guia/assets/banner.jpg)](https://inematds.github.io/zelador/guia/)
 
-Python 3.11+, só biblioteca padrão. Sem API: a explicação por IA é opcional e usa o comando que você escolher
-(por exemplo `claude -p` pela assinatura).
+**Sua automação falhou de madrugada e ninguém viu?** Com o Zelador, de manhã você vê o que deu erro nas rotinas da sua máquina. Na segunda, recebe em português simples o que vale consertar, e decide.
 
-## Começar
+## 📖 Guia
+
+Para entender o que ele faz e como muda o seu dia (sem parte técnica): **https://inematds.github.io/zelador/guia/**
+
+## O que é
+
+Quem deixa robôs e agentes de IA trabalhando sozinhos só descobre o problema quando alguém reclama. O Zelador é um programa gratuito que fica de olho nisso por você: toda madrugada ele confere o que falhou, e toda semana junta o que vale melhorar num formulário simples, para você decidir. Se você ainda não anota falhas e pendências, ele cria os arquivos. Se já anota, ele usa os seus. Para instalar, basta pedir à sua IA.
+
+## O que ele vê e o que não vê
+
+- **Vê:** rotinas agendadas no próprio computador ou servidor Linux que registram erro, falta de memória, erros repetidos, disco quase cheio e tudo o que você ou a sua IA anotam nas listas de falhas, limites e pendências.
+- **Não vê:** o que roda em serviços na internet, rotinas do sistema, do administrador ou de outra conta, tarefa do cron sem arquivo de registro, rotina que deixou de rodar sem registrar erro, rotina que anota erro mas termina como se tivesse dado certo e resultado errado que terminou sem erro (a não ser que a falha seja anotada).
+- **Sem ninguém conectado** (servidor, ou computador que reiniciou): os agendamentos da conta só rodam com `sudo loginctl enable-linger <usuário>`. O diagnóstico avisa quando falta.
+- **Se nenhuma mensagem chegar de manhã, desconfie:** por padrão ele manda uma linha mesmo em noite limpa, então o silêncio indica que a ronda pode não ter rodado.
+- **Dados sensíveis:** o aviso e o relatório podem levar trechos dos registros, e a explicação por IA envia título, proposta e evidências. Se os registros têm dados de clientes, use `noite.trechos = false` e deixe `explicar.comando` vazio.
+- Tarefa do cron só é vista pelo que aparece no arquivo de registro: use `>> arquivo.log 2>&1`.
+- Se não conseguir olhar alguma parte, o aviso diz qual, em vez de dizer que a noite foi limpa.
+- O aviso só sai depois que você escolhe o canal. O formulário abre no computador onde o Zelador está; para abrir no celular, ligue os dois por uma rede privada e ponha o endereço em `painel.enderecos` e `painel.link`.
+- Testado em Linux. Mac e Windows ainda não foram testados.
+
+## Como começar (sem ser técnico)
+
+Abra o Claude Code, ou o Codex, na máquina onde as rotinas rodam, na pasta onde ficam os seus projetos, e cole:
+
+```text
+Leia o projeto Zelador em https://github.com/inematds/zelador (o README explica tudo, inclusive a instalação).
+Baixe uma cópia numa pasta temporária, fora dos meus projetos, e rode só o diagnóstico, a partir da pasta onde ficam os meus projetos (procure, se eu não souber). Não altere nada.
+Depois me responda em português simples:
+1. Ele enxerga as rotinas que rodam aqui? O que ele veria, o que não veria, e ele continua rodando sem ninguém conectado?
+2. O que eu já tenho e ele pode aproveitar?
+3. O que falta e ele criaria?
+4. Por onde eu receberia os avisos, e o que eu precisaria fazer para isso?
+Não instale nem mude nada ainda. Mostre o plano e espere eu dizer sim.
+Quando eu disser sim, instale numa pasta permanente, nunca na temporária.
+```
+
+---
+
+## Instalação técnica
+
+Python 3.11+, só biblioteca padrão. Testado em Linux; fonte que não existe na máquina (sem `journalctl`, sem cron) é pulada e aparece no relatório como pulada. Sem API: a explicação por IA é opcional e usa o comando que você escolher (por exemplo `claude -p` pela assinatura).
 
 ```bash
 git clone https://github.com/inematds/zelador.git && cd zelador
-python3 -m unittest discover -s tests -v     # 14 testes, sem rede
+python3 -m unittest discover -s tests -v     # 21 testes, sem rede
 bin/zelador iniciar                          # diagnóstico: não escreve nada
 bin/zelador iniciar --aplicar                # cria o que falta, nunca sobrescreve
-bin/zelador agendar --aplicar                # madrugada 04:20, pauta segunda 07:45, painel sempre ligado
+bin/zelador bloco                            # instrução para colar no CLAUDE.md/AGENTS.md
+bin/zelador agendar --aplicar                # (clone numa pasta permanente) madrugada 04:20, pauta segunda 07:45, painel sempre ligado
 ```
 
 O diagnóstico responde peça por peça:
@@ -28,6 +64,8 @@ O diagnóstico responde peça por peça:
 | `✓ JÁ TEM` | o zelador usa como está |
 | `→ PROPOSTA` | você tem algo parecido ou pode ligar uma fonte; ele explica e você decide |
 | `+ CRIAR` | não existe nada; com `--aplicar` ele cria a partir do modelo |
+
+Um nome parecido (`ERRORS.md`, `TODO.md`) só é adotado por `--aplicar` quando você ainda não tem nenhum arquivo daquele tipo. Se já tem, fica como sugestão.
 
 ## O processo, do início ao fim
 
@@ -52,13 +90,14 @@ O diagnóstico responde peça por peça:
 - Dados: `~/.local/share/zelador/` — `noite/` (relatórios da madrugada), `pautas/`, `decisoes.json`, `explicacoes.json`.
 - Modelos dos arquivos que ele cria: `zelador/modelos/`.
 - Aviso pelo Telegram: `zelador/modelos/avisar-telegram.sh` (token num arquivo seu, nunca no repositório).
+- Pauta de demonstração, com dados inventados: `exemplos/pauta-demo.json`.
 
 ## Segurança
 
 - O diagnóstico só lê. `--aplicar` cria arquivos que não existem e guarda a config anterior em `.toml.antes`.
 - Nunca edita seu CLAUDE.md/AGENTS.md: mostra o bloco para você colar.
 - O painel escuta só em `127.0.0.1`; outro endereço (VPN) só se você puser em `painel.enderecos`.
-- Fonte que não existe na máquina (sem `journalctl`, sem cron) é pulada e aparece no relatório como pulada.
+- `tests/test_sem_dados_sensiveis.py` reprova caminho de casa, IP, e-mail, token e config ou dados pessoais versionados.
 
 ## Licença
 

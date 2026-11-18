@@ -32,7 +32,7 @@ PROPOSTA = {
              'do teto, antes de seguir.',
     'gancho/validador': 'Criar uma trava automática: antes de executar o passo, um verificador olha o comando ou o '
                         'arquivo e barra se for o erro conhecido, mostrando a lição. O erro deixa de depender de memória.',
-    'servidor/arquitetura': 'Mudar o próprio script para fazer o passo sozinho (ou gerar o que falta). Em vez de alguém '
+    'servidor/arquitetura': 'Mudar o próprio sistema para fazer o passo sozinho (ou gerar o que falta). Em vez de alguém '
                             'lembrar de fazer, o sistema faz — o erro deixa de existir.',
     'checklist': 'Pôr a lição numa lista de conferência obrigatória do fluxo.',
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2 — 2026-11-18
+
+- A madrugada nunca diz "limpa" sobre o que não conseguiu olhar: o aviso lista o que não foi verificado.
+- Tarefa do cron sem arquivo de registro aparece como não verificada; o diagnóstico avisa sobre ela, sobre o alcance da conta e sobre o linger em servidor.
+- Logs do cron: reconhece erro em português, resolve `$HOME` e conta log inexistente como não verificado; erro do cron aparece no aviso mesmo com itens graves e entra na pauta.
+- Frases como "sem erro" não contam como erro; a primeira leitura de um log é marcada; o aviso sai em linguagem mais simples e sugere colar na IA.
+- `noite.trechos = false` tira trechos dos registros do aviso e do relatório; mais padrões de erro reconhecidos.
+- Journal sem nenhuma linha conta como não verificado. Textos do aviso e das propostas mais simples.
+
 ## 1.0.0 — 2026-11-17
 
 - `zelador iniciar`: diagnóstico (já tem / proposta / criar) e `--aplicar` que cria o que falta sem sobrescrever
