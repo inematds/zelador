@@ -4,7 +4,7 @@
 
 [![Zelador](guia/assets/banner.jpg)](https://inematds.github.io/zelador/guia/)
 
-**O agente Zelador te ajuda a melhorar o seu sistema todo dia.** Enquanto você dorme, ele olha o que falhou. De manhã, te avisa. Com o que se repete, aprende e te sugere o conserto. Você só decide.
+**O agente Zelador te ajuda a melhorar o seu sistema todo dia.** Enquanto você dorme, ele olha o que falhou. De manhã, te avisa. Com o que se repete, aprende. Com a sua IA ligada, investiga a causa e sugere o conserto. Você só decide.
 
 ## 📖 Guia
 
@@ -16,14 +16,14 @@ Quem deixa robôs e agentes de IA trabalhando sozinhos só descobre o problema q
 
 ## O que ele vê e o que não vê
 
-- **Vê:** rotinas agendadas no próprio computador ou servidor Linux que falham, escrevem erro ou param de rodar (ele aprende o ritmo de cada uma em alguns dias), falta de memória, erros repetidos, disco quase cheio e tudo o que você ou a sua IA anotam nas listas de falhas, limites e pendências.
+- **Vê:** rotinas agendadas no próprio computador ou servidor Linux que falham, escrevem erro ou param de rodar (o ritmo de cada uma vem do histórico da máquina), falta de memória, erros repetidos, disco quase cheio e tudo o que você ou a sua IA anotam nas listas de falhas, limites e pendências.
 - **Não vê:** o que roda em serviços na internet, rotinas do sistema, do administrador ou de outra conta, tarefa do cron sem arquivo de registro, e resultado errado que não deixa nenhum sinal (a não ser que a falha seja anotada).
 - **Sem ninguém conectado** (servidor, ou computador que reiniciou): os agendamentos da conta só rodam com `sudo loginctl enable-linger <usuário>`. O diagnóstico avisa quando falta.
 - **Se nenhuma mensagem chegar de manhã, desconfie:** por padrão ele manda uma linha mesmo em noite limpa, então o silêncio indica que a ronda pode não ter rodado.
 - **Dados sensíveis:** o aviso e o relatório podem levar trechos dos registros, e a explicação por IA envia título, proposta e evidências. Se os registros têm dados de clientes, use `noite.trechos = false` e deixe `explicar.comando` vazio.
 - Tarefa do cron só é vista pelo que aparece no arquivo de registro: use `>> arquivo.log 2>&1`.
 - Se não conseguir olhar alguma parte, o aviso diz qual, em vez de dizer que a noite foi limpa.
-- O aviso só sai depois que você escolhe o canal. O formulário abre no computador onde o Zelador está; para abrir no celular, ligue os dois por uma rede privada e ponha o endereço em `painel.enderecos` e `painel.link`.
+- O aviso só sai depois que você escolhe o canal. O formulário abre no computador onde o Zelador está, e o endereço aparece em todo relatório da madrugada; para abrir no celular, ligue os dois por uma rede privada e ponha o endereço em `painel.enderecos` e `painel.link`.
 - Testado em Linux. Mac e Windows ainda não foram testados.
 
 ## Como começar (sem ser técnico)
@@ -50,7 +50,7 @@ Python 3.11+, só biblioteca padrão. Testado em Linux; fonte que não existe na
 
 ```bash
 git clone https://github.com/inematds/zelador.git && cd zelador
-python3 -m unittest discover -s tests -v     # 23 testes, sem rede
+python3 -m unittest discover -s tests -v     # 25 testes, sem rede
 bin/zelador iniciar                          # diagnóstico: não escreve nada
 bin/zelador iniciar --aplicar                # cria o que falta, nunca sobrescreve
 bin/zelador bloco                            # instrução para colar no CLAUDE.md/AGENTS.md
@@ -80,7 +80,7 @@ Um nome parecido (`ERRORS.md`, `TODO.md`) só é adotado por `--aplicar` quando 
 | 5 | Agendar | `zelador agendar --aplicar` | ⚙️ |
 | 6 | Todo dia 04:20: falhas de rotina, falta de memória, erro repetido, erros do cron, registros novos, disco | `zelador noite` | ⚙️ |
 | 7 | Toda segunda 07:45: pauta com as falhas que voltam, madrugadas graves, seus outros monitores, limites abertos e pendências paradas | `zelador pauta --avisar` | ⚙️ |
-| 8 | Cada item novo ganha a explicação simples: o que aconteceu, por que importa, o que a proposta faz | `explicar.comando` | 🤖 |
+| 8 | Cada item novo ganha a explicação simples, a causa provável e o conserto sugerido, lendo o fim dos registros da rotina e dos logs recentes do projeto, com senhas ocultadas (`explicar.ler_registros`) | `explicar.comando` | 🤖 |
 | 9 | Ler e decidir no painel: Aprovar, Recusar (some por 8 semanas), Analisar, Adiar, com nota | `zelador painel` → http://127.0.0.1:8810/ | 🧠 |
 | 10 | Fechar a semana: aprovadas e "analisar" entram nas pendências, e o aviso manda o placar | botão no painel | 🧠 |
 

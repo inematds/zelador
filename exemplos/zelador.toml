@@ -39,6 +39,7 @@ relatorios = []                    # ex.: [{nome = "meu-bot", pasta = "~/projeto
 [explicar]                         # opcional: IA que explica cada item em português simples
 comando = []                       # ex.: ["claude", "-p"] (assinatura) — recebe o pedido no stdin
 cwd = ""
+ler_registros = true               # a IA lê o fim do registro da rotina (senhas são ocultadas) para sugerir o conserto
 max_chamadas = 3
 timeout = 420
 

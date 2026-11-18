@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 — 2026-11-18
+
+- A explicação por IA passa a trazer causa provável e conserto sugerido, lendo o fim do registro da rotina (senhas ocultadas; `explicar.ler_registros`).
+- Rotina parada é apontada na primeira execução perdida: o ritmo vem do histórico da máquina.
+- O relatório diário traz o endereço do formulário.
+
 ## 1.1.2 — 2026-11-18
 
 - Detecta rotina que parou de rodar: aprende o ritmo de cada timer ativo, noite após noite.

@@ -127,8 +127,29 @@ def periodo_cron(linha):
     return 2678400 if c[2] != '*' or c[3] != '*' else 86400
 
 
-def rotinas_paradas(estado, agora=None):
-    """Aprende o ritmo de cada timer ativo, noite após noite, e aponta o que passou muito da hora."""
+def inicios_rotinas(dias=35):
+    """Quando cada serviço começou a rodar, pelo histórico que a própria máquina guarda."""
+    out = collections.defaultdict(list)
+    if not shutil.which('journalctl'):
+        return out
+    proc = subprocess.Popen(['journalctl', '--user', '--since', f'-{dias}d', '-t', 'systemd', '-o', 'json',
+                             '--output-fields=MESSAGE,USER_UNIT', '--no-pager'],
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, errors='replace')
+    for linha in proc.stdout:
+        if '"Starting ' not in linha:
+            continue
+        try:
+            e = json.loads(linha)
+            if e.get('USER_UNIT'):
+                out[e['USER_UNIT']].append(int(e['__REALTIME_TIMESTAMP']) / 1e6)
+        except (ValueError, KeyError, TypeError):
+            continue
+    proc.wait()
+    return out
+
+
+def rotinas_paradas(estado, agora=None, inicios=None):
+    """Aponta o timer ativo que passou do maior intervalo normal dele. O ritmo vem do histórico da máquina."""
     agora = agora or time.time()
     try:
         timers = json.loads(sh(['systemctl', '--user', 'list-timers', '--all', '--output=json', '--no-pager']) or '[]')
@@ -136,21 +157,28 @@ def rotinas_paradas(estado, agora=None):
         return []
     ativos = {l.split()[0] for l in sh(['systemctl', '--user', 'list-unit-files', '--type=timer', '--state=enabled',
                                         '--no-legend', '--no-pager']).splitlines() if l.split()}
+    if not timers or not ativos:
+        return []
+    inicios = inicios_rotinas() if inicios is None else inicios
     hist, out = estado.setdefault('timers', {}), []
     for t in timers:
         u, ultimo = t.get('unit'), (t.get('last') or 0) / 1e6
         if u not in ativos or not ultimo:
             continue
-        h = hist.setdefault(u, [])
+        h = hist.setdefault(u, [])  # reserva para máquina que guarda pouco histórico
         if not h or ultimo > h[-1] + 1:
             h.append(int(ultimo))
-            del h[:-8]
-        if len(h) < 3:  # ainda aprendendo o ritmo
+            del h[:-9]
+        vistos = []
+        for x in sorted(inicios.get(t.get('activates'), [])):
+            if not vistos or x - vistos[-1] > 60:
+                vistos.append(x)
+        base = vistos[-9:] if len(vistos) >= 3 else h
+        if len(base) < 3:
             continue
-        vaos = sorted(b - a for a, b in zip(h, h[1:]))
-        ritmo = vaos[len(vaos) // 2]
-        if agora - ultimo > 2.5 * ritmo + 3600:
-            out.append((u.removesuffix('.timer'), agora - ultimo, ritmo))
+        vaos = [b - a for a, b in zip(base, base[1:])]
+        if agora - ultimo > max(vaos) + 3600:
+            out.append((u.removesuffix('.timer'), agora - ultimo, sorted(vaos)[len(vaos) // 2]))
     return out
 
 
@@ -250,19 +278,24 @@ def rodar(cfg, horas=None, sem_aviso=False):
     disco = shutil.disk_usage('/')
     disco_pct = round(100 * disco.used / disco.total)
 
-    grave, atencao = [], []
+    grave, atencao, origem = [], [], {}
+
+    def marca(lista, texto, **fonte):
+        lista.append(texto)
+        origem[texto.split(' — ')[0]] = fonte
+
     for u, n in falhas.most_common():
         if u in oom:
             continue
         nome = u.removesuffix('.service')
-        (grave if u in ts else atencao).append(f"{'a rotina' if u in ts else 'a tarefa avulsa'} {nome} falhou {n}×")
+        marca(grave if u in ts else atencao, f"{'a rotina' if u in ts else 'a tarefa avulsa'} {nome} falhou {n}×", unidade=u)
     for nome, atraso, ritmo in paradas:
-        grave.append(f'a rotina {nome} parou de rodar: a última vez foi há {tempo(atraso)}, '
-                     f'e ela costuma rodar a cada {tempo(ritmo)}')
+        marca(grave, f'a rotina {nome} parou de rodar: a última vez foi há {tempo(atraso)}, '
+                     f'e ela costuma rodar a cada {tempo(ritmo)}', unidade=f'{nome}.service')
     for u, (n, ult) in sorted(saida.items(), key=lambda x: -x[1][0]):
         if u in ts and u not in falhas and u.removesuffix('.service') not in c['ignorar']:
             fim = f' — última: {ult[:110]}' if c['trechos'] else ''
-            atencao.append(f"a rotina {u.removesuffix('.service')} terminou, mas escreveu {n} linha(s) com erro{fim}")
+            marca(atencao, f"a rotina {u.removesuffix('.service')} terminou, mas escreveu {n} linha(s) com erro{fim}", unidade=u)
     if oom or mortos:
         nomes = ', '.join(f'{k} {v}×' for k, v in collections.Counter(mortos).most_common(5)) or '?'
         servicos = [u for u in dict.fromkeys(oom) if u.endswith('.service')]
@@ -281,7 +314,7 @@ def rodar(cfg, horas=None, sem_aviso=False):
     for alvo, n, ult, primeira in cron:
         extra = ' (primeira leitura: pode incluir erros antigos)' if primeira else ''
         fim = f' — última: {ult[:110]}' if c['trechos'] else ''
-        atencao.append(f'tarefa agendada ({Path(alvo).name}): {n} linha(s) com erro{extra}{fim}')
+        marca(atencao, f'tarefa agendada ({Path(alvo).name}): {n} linha(s) com erro{extra}{fim}', arquivo=alvo)
     for nome, parado, periodo in cron_paradas:
         atencao.append(f'tarefa agendada ({nome}): sem nenhuma atividade há {tempo(parado)}, '
                        f'e deveria rodar a cada {tempo(periodo)}; pode ter parado')
@@ -301,11 +334,12 @@ def rodar(cfg, horas=None, sem_aviso=False):
         ['', '## Erros mais frequentes no journal', '']
     L += [f'- {n}× `{u}`' + (f' — {exemplo[(u, m)][:150]}' if c['trechos'] else '')
           for (u, m), n in erros.most_common(15)] or ['- nenhum']
+    L += ['', f'Formulário da semana: {config.link_painel(cfg)}']
     L += ['', 'Como agir: `journalctl --user -u <unidade> -n 50`; depois de corrigir, uma linha no FALHAS.md.',
           "Unidade avulsa velha em 'failed' que não importa mais: `systemctl --user reset-failed <unidade>`."]
     rel = pasta / f'{hoje}.md'
     rel.write_text('\n'.join(L) + '\n')
-    (pasta / f'{hoje}.json').write_text(json.dumps({'grave': grave, 'atencao': atencao}, ensure_ascii=False, indent=1))
+    (pasta / f'{hoje}.json').write_text(json.dumps({'grave': grave, 'atencao': atencao, 'origem': origem}, ensure_ascii=False, indent=1))
     estado['ultima'] = hoje
     arq_estado.write_text(json.dumps(estado, ensure_ascii=False, indent=1))
     resultado = {'relatorio': str(rel), 'grave': len(grave), 'atencao': len(atencao)}

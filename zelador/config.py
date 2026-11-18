@@ -4,7 +4,7 @@ import os
 import tomllib
 from pathlib import Path
 
-VERSAO = '1.1.2'
+VERSAO = '1.2.2'
 
 PADRAO = {
     'geral': {
@@ -46,6 +46,7 @@ PADRAO = {
     'explicar': {
         'comando': [],                     # recebe o pedido no stdin e devolve texto (ou JSON com "texto")
         'cwd': '',
+        'ler_registros': True,             # manda à IA o fim do registro da rotina, sem senhas, para achar a causa
         'max_chamadas': 3,
         'timeout': 420,
     },

@@ -106,7 +106,9 @@ function lista(){
       ${i.explicacao ? `<dl class="expl">
         <dt>O que aconteceu</dt><dd>${esc(i.explicacao.aconteceu)}</dd>
         <dt>Por que importa</dt><dd>${esc(i.explicacao.importa)}</dd>
-        <dt>O que a proposta faz</dt><dd>${esc(i.explicacao.muda)}</dd></dl>` : ''}
+        <dt>O que a proposta faz</dt><dd>${esc(i.explicacao.muda)}</dd>
+        ${i.explicacao.causa ? `<dt>Causa provável</dt><dd>${esc(i.explicacao.causa)}</dd>` : ''}
+        ${i.explicacao.conserto ? `<dt>Conserto sugerido</dt><dd>${esc(i.explicacao.conserto)}</dd>` : ''}</dl>` : ''}
       ${i.proposta_simples ? `<p class="simples"><b>A proposta, em resumo:</b> ${esc(i.proposta_simples)}</p>` : ''}
       <details><summary>Detalhe técnico</summary><p>${esc(i.proposta)}</p></details>
       <details><summary>Evidência (${(i.evidencia||[]).length})</summary><ul>${(i.evidencia||[]).map(e => `<li>${esc(e)}</li>`).join('')}</ul></details>

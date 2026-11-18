@@ -9,14 +9,21 @@
    "titulo": "O relatório das vendas saiu vazio porque a planilha do dia ainda não tinha chegado",
    "proposta": "Subir de texto para servidor/arquitetura: o script faz o passo sozinho (ou gera o que falta).",
    "proposta_simples": "Este erro já aconteceu 5 vezes. Hoje a correção está só anotada num arquivo — depende de alguém lembrar de ler. Proposta: Mudar o próprio sistema para fazer o passo sozinho (ou gerar o que falta). Em vez de alguém lembrar de fazer, o sistema faz — o erro deixa de existir.",
-   "evidencia": ["03/11 · loja-exemplo/FALHAS.md:4 — relatório vazio → correção: rodei de novo à mão", "10/11 · loja-exemplo/FALHAS.md:2 — relatório vazio de novo → correção: rodei de novo à mão"],
+   "evidencia": [
+    "03/11 · loja-exemplo/FALHAS.md:4 — relatório vazio → correção: rodei de novo à mão",
+    "10/11 · loja-exemplo/FALHAS.md:2 — relatório vazio de novo → correção: rodei de novo à mão"
+   ],
    "gravidade": "alta",
    "vezes": 5,
-   "projetos": ["loja-exemplo"],
+   "projetos": [
+    "loja-exemplo"
+   ],
    "explicacao": {
     "aconteceu": "O relatório das vendas rodou antes de a planilha do dia chegar e saiu em branco. Já foram cinco vezes.",
     "importa": "Você abre o relatório de manhã, não vê nada e perde tempo refazendo à mão.",
-    "muda": "O sistema passa a esperar a planilha antes de gerar. Você recebe o relatório completo, sem precisar refazer."
+    "muda": "O sistema passa a esperar a planilha antes de gerar. Você recebe o relatório completo, sem precisar refazer.",
+    "causa": "Os registros mostram que o relatório começa às 6h e a planilha só chega às 6h20.",
+    "conserto": "Mudar o relatório para 6h40 ou fazer ele esperar a planilha antes de começar."
    }
   },
   {
@@ -25,13 +32,19 @@
    "titulo": "rotina `backup-diario` falhou 3×",
    "proposta": "Ver o log, achar a causa e pôr a proteção que falta; registrar no FALHAS.md.",
    "proposta_simples": "Uma rotina automática falhou de madrugada ou faltou memória. A proposta é abrir o log, achar a causa e pôr a proteção que falta (teto, nova tentativa, conferência) para não cair de novo.",
-   "evidencia": ["21/11: rotina backup-diario falhou 1×", "22/11: rotina backup-diario falhou 1×", "23/11: rotina backup-diario falhou 1×"],
+   "evidencia": [
+    "21/11: rotina backup-diario falhou 1×",
+    "22/11: rotina backup-diario falhou 1×",
+    "23/11: rotina backup-diario falhou 1×"
+   ],
    "gravidade": "alta",
    "vezes": 3,
    "explicacao": {
     "aconteceu": "A cópia de segurança da madrugada falhou três noites seguidas, e nenhuma pessoa tinha percebido.",
     "importa": "Se você perder um arquivo hoje, a última cópia boa é de três dias atrás.",
-    "muda": "Alguém descobre por que ela cai e põe uma nova tentativa automática. Você volta a ter cópia de toda noite."
+    "muda": "Alguém descobre por que ela cai e põe uma nova tentativa automática. Você volta a ter cópia de toda noite.",
+    "causa": "O registro da rotina mostra que o disco de destino não estava disponível.",
+    "conserto": "Conferir o disco antes da cópia e tentar de novo depois de alguns minutos."
    }
   },
   {
@@ -40,12 +53,16 @@
    "titulo": "Publicar o post agendado — barrou: a senha do serviço venceu",
    "proposta": "Trocar a senha e guardar a data de validade para avisar antes de vencer.",
    "proposta_simples": "Algo te barrou (ferramenta, permissão, cota, ambiente). A proposta é o caminho para destravar de vez, em vez de contornar toda vez.",
-   "evidencia": ["18/11 · contorno: publiquei à mão"],
+   "evidencia": [
+    "18/11 · contorno: publiquei à mão"
+   ],
    "gravidade": "média",
    "explicacao": {
     "aconteceu": "O post agendado não saiu porque a senha do serviço tinha vencido.",
     "importa": "Quem depende do agendamento só descobre quando o post não aparece.",
-    "muda": "A validade da senha fica anotada e você é avisado antes de ela vencer."
+    "muda": "A validade da senha fica anotada e você é avisado antes de ela vencer.",
+    "causa": "A senha do serviço venceu em 18/11.",
+    "conserto": "Renovar a senha e anotar a próxima data de validade."
    }
   },
   {
@@ -54,7 +71,9 @@
    "titulo": "01/10 — Trocar o fornecedor de e-mail",
    "proposta": "Decidir: fazer agora, adiar com data ou fechar.",
    "proposta_simples": "Isto está nas pendências há semanas sem andar. A proposta é decidir: fazer agora, marcar uma data ou fechar.",
-   "evidencia": ["parada há 53 dias"],
+   "evidencia": [
+    "parada há 53 dias"
+   ],
    "gravidade": "baixa"
   }
  ]

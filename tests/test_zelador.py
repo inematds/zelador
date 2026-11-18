@@ -162,15 +162,18 @@ class RotinaParada(Base):
             return ''
         return sh
 
-    def test_aprende_o_ritmo_e_aponta_a_que_parou(self):
-        dia, agora, estado = 86400, 10_000_000, {}
-        for n in (4, 3, 2):
-            with mock.patch('zelador.noite.sh', side_effect=self.falso([{'unit': 'backup.timer', 'last': (agora - n * dia) * 1_000_000}])):
-                self.assertEqual(noite.rotinas_paradas(estado, agora - n * dia + 60), [])
-        with mock.patch('zelador.noite.sh', side_effect=self.falso([{'unit': 'backup.timer', 'last': (agora - 2 * dia) * 1_000_000}])):
-            self.assertEqual(noite.rotinas_paradas(estado, agora), [])  # dentro da folga
-            achou = noite.rotinas_paradas(estado, agora + 2 * dia)
-        self.assertEqual(achou[0][0], 'backup')
+    def test_avisa_na_primeira_execucao_perdida_e_respeita_fim_de_semana(self):
+        dia, agora = 86400, 10_000_000
+        diaria = [agora - n * dia for n in (6, 5, 4, 3, 2, 1)]
+        timer = [{'unit': 'backup.timer', 'activates': 'backup.service', 'last': diaria[-1] * 1_000_000}]
+        with mock.patch('zelador.noite.sh', side_effect=self.falso(timer)):
+            ok = noite.rotinas_paradas({}, diaria[-1] + dia + 600, {'backup.service': diaria})
+            ruim = noite.rotinas_paradas({}, diaria[-1] + dia + 7200, {'backup.service': diaria})
+            util = [agora - n * dia for n in (8, 7, 4, 3, 2, 1)]  # com folga de 3 dias no meio
+            fds = noite.rotinas_paradas({}, diaria[-1] + 2 * dia, {'backup.service': util})
+        self.assertEqual(ok, [])
+        self.assertEqual(ruim[0][0], 'backup')
+        self.assertEqual(fds, [])
 
     def test_rotina_que_termina_bem_mas_escreveu_erro_aparece(self):
         msgs = []
@@ -183,6 +186,32 @@ class RotinaParada(Base):
                 mock.patch('zelador.avisar.avisar', side_effect=lambda c, m: msgs.append(m) or 'ok'):
             noite.rodar(self.cfg)
         self.assertIn('a rotina backup terminou, mas escreveu 2 linha(s) com erro', msgs[0])
+
+
+class RegistroParaIA(Base):
+    def test_oculta_senha_e_respeita_desligado(self):
+        log = self.home / 'r.log'
+        chave = 'sk-' + 'abcdefghijklmnop'
+        log.write_text(f'senha=abc123 Bearer xyz {chave} falhou\n')
+        it = {'origem': {'arquivo': str(log)}}
+        txt = pauta.registros_do_item(self.cfg, it)
+        self.assertIn('falhou', txt)
+        for segredo in ('abc123', 'xyz', chave):
+            self.assertNotIn(segredo, txt)
+        self.cfg['explicar']['ler_registros'] = False
+        self.assertEqual(pauta.registros_do_item(self.cfg, it), '')
+
+
+class PistasDoProjeto(Base):
+    def test_pega_erro_do_log_recente_do_projeto(self):
+        p = self.proj / 'loja/logs'
+        p.mkdir(parents=True)
+        (p / 'rodada.log').write_text('tudo certo\nErro: planilha nao encontrada\n')
+        (self.proj / 'loja/velho.log').write_text('Erro antigo\n')
+        os.utime(self.proj / 'loja/velho.log', (1, 1))
+        txt = pauta.pistas_em_logs(self.proj / 'loja')
+        self.assertIn('planilha nao encontrada', txt)
+        self.assertNotIn('Erro antigo', txt)
 
 
 class ErroNoLog(unittest.TestCase):
@@ -236,7 +265,7 @@ class Explicar(NomesDiferentes):
         script = self.home / 'explica.py'
         script.write_text('import sys,json\nitens=json.loads(sys.stdin.read().split("Itens:\\n",1)[1])\n'
                           'print(json.dumps({"status":"ok","texto":json.dumps({i["id"]:{"aconteceu":"a","importa":"b",'
-                          '"muda":"c"} for i in itens}),"rota":{"modelo":"falso"}}))\n')
+                          '"muda":"c","causa":"d","conserto":"e"} for i in itens}),"rota":{"modelo":"falso"}}))\n')
         self.cfg['explicar']['comando'] = ['python3', str(script)]
         res = pauta.gerar(self.cfg, hoje=dt.date(2026, 11, 17))
         itens = json.loads(Path(res['pauta']).read_text())['itens']
