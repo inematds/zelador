@@ -4,7 +4,7 @@ import os
 import tomllib
 from pathlib import Path
 
-VERSAO = '1.0.2'
+VERSAO = '1.1.2'
 
 PADRAO = {
     'geral': {

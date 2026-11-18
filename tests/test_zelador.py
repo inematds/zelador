@@ -106,10 +106,10 @@ class NoiteCronSemLog(Base):
         def falso(cmd, timeout=120):
             return '0 3 * * * /bin/backup\n' if cmd[0] == 'crontab' else ''
         with mock.patch('zelador.noite.sh', side_effect=falso), \
-                mock.patch('zelador.noite.journal', return_value=({}, {}, {}, [], True)) as j, \
+                mock.patch('zelador.noite.journal', return_value=({}, {}, {}, [], True, {})) as j, \
                 mock.patch('zelador.avisar.avisar', side_effect=lambda c, m: msgs.append(m) or 'ok'):
             import collections
-            j.return_value = (collections.Counter(), collections.Counter(), {}, [], True)
+            j.return_value = (collections.Counter(), collections.Counter(), {}, [], True, {})
             r = noite.rodar(self.cfg)
         self.assertIn('cron', r['nao_verificado'])
         self.assertNotIn('limpa', msgs[0])
@@ -123,7 +123,7 @@ class NoiteLogs(Base):
 
         def falso(cmd, timeout=120):
             return '0 3 * * * /bin/backup >> $HOME/backup.log 2>&1\n' if cmd[0] == 'crontab' else ''
-        vazio = (collections.Counter(), collections.Counter(), {}, [], True)
+        vazio = (collections.Counter(), collections.Counter(), {}, [], True, {})
         with mock.patch('zelador.noite.sh', side_effect=falso), mock.patch('zelador.noite.journal', return_value=vazio), \
                 mock.patch('zelador.noite.oom_kernel', return_value=[]), \
                 mock.patch('zelador.noite.shutil.which', return_value='/bin/x'), \
@@ -142,7 +142,7 @@ class SemTrechos(Base):
 
         def falso(cmd, timeout=120):
             return f'0 3 * * * /bin/x >> {log} 2>&1\n' if cmd[0] == 'crontab' else ''
-        vazio = (collections.Counter(), collections.Counter(), {}, [], True)
+        vazio = (collections.Counter(), collections.Counter(), {}, [], True, {})
         with mock.patch('zelador.noite.sh', side_effect=falso), mock.patch('zelador.noite.journal', return_value=vazio), \
                 mock.patch('zelador.noite.shutil.which', return_value='/bin/x'), \
                 mock.patch('zelador.avisar.avisar', side_effect=lambda c, m: msgs.append(m) or 'ok'):
@@ -150,6 +150,39 @@ class SemTrechos(Base):
         self.assertIn('a.log', msgs[0])
         self.assertNotIn('Maria', msgs[0])
         self.assertNotIn('Maria', Path(r['relatorio']).read_text())
+
+
+class RotinaParada(Base):
+    def falso(self, timers):
+        def sh(cmd, timeout=120):
+            if '--output=json' in cmd:
+                return json.dumps(timers)
+            if 'list-unit-files' in cmd:
+                return 'backup.timer enabled enabled\n'
+            return ''
+        return sh
+
+    def test_aprende_o_ritmo_e_aponta_a_que_parou(self):
+        dia, agora, estado = 86400, 10_000_000, {}
+        for n in (4, 3, 2):
+            with mock.patch('zelador.noite.sh', side_effect=self.falso([{'unit': 'backup.timer', 'last': (agora - n * dia) * 1_000_000}])):
+                self.assertEqual(noite.rotinas_paradas(estado, agora - n * dia + 60), [])
+        with mock.patch('zelador.noite.sh', side_effect=self.falso([{'unit': 'backup.timer', 'last': (agora - 2 * dia) * 1_000_000}])):
+            self.assertEqual(noite.rotinas_paradas(estado, agora), [])  # dentro da folga
+            achou = noite.rotinas_paradas(estado, agora + 2 * dia)
+        self.assertEqual(achou[0][0], 'backup')
+
+    def test_rotina_que_termina_bem_mas_escreveu_erro_aparece(self):
+        msgs = []
+        vazio = (collections.Counter(), collections.Counter(), {}, [], True, {'backup.service': (2, 'ERRO ao copiar')})
+
+        def sh(cmd, timeout=120):
+            return 'x y backup.timer backup.service\n' if 'list-timers' in cmd and '--output=json' not in cmd else ''
+        with mock.patch('zelador.noite.sh', side_effect=sh), mock.patch('zelador.noite.journal', return_value=vazio), \
+                mock.patch('zelador.noite.oom_kernel', return_value=[]), \
+                mock.patch('zelador.avisar.avisar', side_effect=lambda c, m: msgs.append(m) or 'ok'):
+            noite.rodar(self.cfg)
+        self.assertIn('a rotina backup terminou, mas escreveu 2 linha(s) com erro', msgs[0])
 
 
 class ErroNoLog(unittest.TestCase):

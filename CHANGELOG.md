@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 — 2026-11-18
+
+- Detecta rotina que parou de rodar: aprende o ritmo de cada timer ativo, noite após noite.
+- Detecta rotina que terminou bem mas escreveu erro na saída ou no arquivo próprio.
+- Tarefa do cron sem atividade muito além do previsto vira ponto de atenção.
+
 ## 1.0.2 — 2026-11-18
 
 - A madrugada nunca diz "limpa" sobre o que não conseguiu olhar: o aviso lista o que não foi verificado.

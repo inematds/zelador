@@ -1,8 +1,9 @@
 """Vigia da madrugada: o que foi grave ou repetido nas últimas horas. Sem LLM.
 
-GRAVE: rotina com timer que falhou, morte por falta de memória, disco no limite, mesmo erro N+ vezes.
-ATENÇÃO: serviço avulso que falhou, erro repetido menor, erros novos nos logs do cron,
-         linhas novas nos FALHAS/LIMITES, unidades presas em 'failed'.
+GRAVE: rotina com timer que falhou ou parou de rodar (ele aprende o ritmo de cada uma), falta de memória,
+       disco no limite, mesmo erro N+ vezes.
+ATENÇÃO: serviço avulso que falhou, rotina que terminou mas escreveu erro, erro repetido menor, erros novos
+         nos logs do cron, tarefa do cron sem atividade, linhas novas nos FALHAS/LIMITES, unidades em 'failed'.
 Cada fonte só roda se existir na máquina (journalctl, crontab, systemctl); a que falta é pulada.
 """
 import collections
@@ -12,6 +13,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 from . import avisar, config, controle
@@ -20,6 +22,7 @@ ERRO_LOG = re.compile(r'Traceback \(most recent|\bERROR\b|\bFATAL\b|\bfatal:|Kil
                       r'|\berro\b|\bfalhou\b|\bfalha\b|(?<!\b0 )\bfailed\b|\bexception\b'
                       r'|permission denied|permissão negada|no such file|command not found|cannot |não foi possível', re.I)
 
+PRIORITARIOS = ('a rotina', 'tarefa agendada')
 NEGADO = re.compile(r'\b(sem|nenhum|nenhuma|0|zero|no|without)\s+(erros?|falhas?|errors?|failures?)\b', re.I)
 
 
@@ -49,9 +52,9 @@ def rotinas():
 
 
 def journal(horas, ignorar):
-    falhas, erros, exemplo, oom = collections.Counter(), collections.Counter(), {}, []
+    falhas, erros, exemplo, oom, saida = collections.Counter(), collections.Counter(), {}, [], {}
     if not shutil.which('journalctl'):
-        return falhas, erros, exemplo, oom, False
+        return falhas, erros, exemplo, oom, False, saida
     proc = subprocess.Popen(['journalctl', '--user', '--since', f'-{horas}h', '-o', 'json', '--no-pager'],
                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, errors='replace')
     leu = False
@@ -76,8 +79,12 @@ def journal(horas, ignorar):
             chave = (unidade, normaliza(msg))
             erros[chave] += 1
             exemplo.setdefault(chave, msg[:200])
+        elif str(e.get('_SYSTEMD_USER_UNIT', '')).endswith('.service') and tem_erro(msg):
+            # a rotina pode terminar "com sucesso" tendo escrito erro na própria saída
+            n, _ = saida.get(e['_SYSTEMD_USER_UNIT'], (0, ''))
+            saida[e['_SYSTEMD_USER_UNIT']] = (n + 1, msg[:160])
     proc.wait()
-    return falhas, erros, exemplo, oom, leu  # sem nenhuma linha, não dá para dizer que a noite foi limpa
+    return falhas, erros, exemplo, oom, leu, saida  # sem nenhuma linha, não dá para dizer que a noite foi limpa
 
 
 def oom_kernel(horas):
@@ -92,10 +99,86 @@ def oom_kernel(horas):
     return re.findall(r'Killed process \d+ \(([^)]+)\)', r.stdout)
 
 
+def ler_novo(p, vistos):
+    """Linhas com erro acrescentadas ao arquivo desde a última leitura: (linhas, primeira_leitura)."""
+    alvo, tam = str(p), p.stat().st_size
+    primeira = alvo not in vistos
+    ini = vistos.get(alvo, max(0, tam - 200_000))
+    if ini > tam:
+        ini = 0
+    with p.open('rb') as f:
+        f.seek(ini)
+        novo = f.read(2_000_000).decode('utf-8', 'replace')
+    vistos[alvo] = tam
+    return [x for x in novo.splitlines() if tem_erro(x)], primeira
+
+
+def tempo(seg):
+    return f'{round(seg / 86400)} dia(s)' if seg >= 129600 else f'{max(1, round(seg / 3600))} hora(s)'
+
+
+def periodo_cron(linha):
+    """De quanto em quanto tempo a tarefa deveria rodar, no mínimo (segundos); None se não dá para saber."""
+    c = linha.split()
+    if c[0].startswith('@'):
+        return {'@hourly': 3600, '@daily': 86400, '@midnight': 86400, '@weekly': 604800, '@monthly': 2678400}.get(c[0])
+    if c[4] != '*':
+        return 604800
+    return 2678400 if c[2] != '*' or c[3] != '*' else 86400
+
+
+def rotinas_paradas(estado, agora=None):
+    """Aprende o ritmo de cada timer ativo, noite após noite, e aponta o que passou muito da hora."""
+    agora = agora or time.time()
+    try:
+        timers = json.loads(sh(['systemctl', '--user', 'list-timers', '--all', '--output=json', '--no-pager']) or '[]')
+    except ValueError:
+        return []
+    ativos = {l.split()[0] for l in sh(['systemctl', '--user', 'list-unit-files', '--type=timer', '--state=enabled',
+                                        '--no-legend', '--no-pager']).splitlines() if l.split()}
+    hist, out = estado.setdefault('timers', {}), []
+    for t in timers:
+        u, ultimo = t.get('unit'), (t.get('last') or 0) / 1e6
+        if u not in ativos or not ultimo:
+            continue
+        h = hist.setdefault(u, [])
+        if not h or ultimo > h[-1] + 1:
+            h.append(int(ultimo))
+            del h[:-8]
+        if len(h) < 3:  # ainda aprendendo o ritmo
+            continue
+        vaos = sorted(b - a for a, b in zip(h, h[1:]))
+        ritmo = vaos[len(vaos) // 2]
+        if agora - ultimo > 2.5 * ritmo + 3600:
+            out.append((u.removesuffix('.timer'), agora - ultimo, ritmo))
+    return out
+
+
+def logs_das_rotinas(estado, ts):
+    """Rotinas que gravam a saída num arquivo próprio (StandardOutput=append:...): erros novos nele."""
+    achados, vistos = {}, estado.setdefault('cron', {})
+    if not ts:
+        return achados
+    unidade = None
+    for l in sh(['systemctl', '--user', 'cat', '--no-pager', *sorted(ts)]).splitlines():
+        if l.startswith('# /'):
+            unidade = Path(l[2:].strip()).name
+        m = re.match(r'Standard(?:Output|Error)=(?:append|file):(\S+)', l)
+        if m and unidade in ts:
+            p = Path(m.group(1).replace('%h', str(Path.home()))).expanduser()
+            if p.is_absolute() and p.is_file():
+                linhas, _ = ler_novo(p, vistos)
+                if linhas:
+                    n, _ = achados.get(unidade, (0, ''))
+                    achados[unidade] = (n + len(linhas), linhas[-1][:160])
+    return achados
+
+
 def logs_cron(estado):
-    """Erros novos nos logs do cron. Devolve (achados, tarefas, tarefas_sem_log)."""
-    vistos, achados = estado.setdefault('cron', {}), []
+    """Erros novos nos logs do cron. Devolve (achados, tarefas, tarefas_sem_log, paradas)."""
+    vistos, achados, paradas = estado.setdefault('cron', {}), [], []
     tarefas = sem_log = 0
+    agora = time.time()
     for l in sh(['crontab', '-l']).splitlines():
         if l.lstrip().startswith('#') or not re.match(r'\s*(@\w+|[\d*/,-]+(\s+[\w*/,-]+){4})\s', l):
             continue
@@ -105,21 +188,15 @@ def logs_cron(estado):
         alvos = [base / Path(os.path.expandvars(a)).expanduser() for a in re.findall(r'>>?\s*(\S+\.log)', l)]
         alvos = [p for p in alvos if p.is_absolute() and p.is_file()]
         sem_log += not alvos  # sem arquivo legível, esta tarefa não foi olhada
+        periodo = periodo_cron(l)
         for p in alvos:
-            alvo = str(p)
-            tam = p.stat().st_size
-            primeira = alvo not in vistos
-            ini = vistos.get(alvo, max(0, tam - 200_000))
-            if ini > tam:
-                ini = 0
-            with p.open('rb') as f:
-                f.seek(ini)
-                novo = f.read(2_000_000).decode('utf-8', 'replace')
-            vistos[alvo] = tam
-            linhas = [x for x in novo.splitlines() if tem_erro(x)]
+            linhas, primeira = ler_novo(p, vistos)
             if linhas:
-                achados.append((alvo, len(linhas), linhas[-1][:160], primeira))
-    return achados, tarefas, sem_log
+                achados.append((str(p), len(linhas), linhas[-1][:160], primeira))
+            parado = agora - p.stat().st_mtime
+            if periodo and p.stat().st_size and parado > 2 * periodo + 21600:
+                paradas.append((p.name, parado, periodo))
+    return achados, tarefas, sem_log, paradas
 
 
 def registros_novos(cfg, estado):
@@ -147,17 +224,21 @@ def rodar(cfg, horas=None, sem_aviso=False):
     hoje = dt.date.today().isoformat()
     fontes, puladas = [], []
 
-    falhas, erros, exemplo, oom, tem_journal = (journal(horas, set(c['ignorar'])) if c['journal']
-                                                else (collections.Counter(), collections.Counter(), {}, [], False))
+    falhas, erros, exemplo, oom, tem_journal, saida = (journal(horas, set(c['ignorar'])) if c['journal']
+                                                else (collections.Counter(), collections.Counter(), {}, [], False, {}))
     (fontes if tem_journal else puladas).append('journal')
     mortos = oom_kernel(horas) if tem_journal else []
     if mortos is None:
         mortos = []
         puladas.append('memoria')
     ts = rotinas()
-    cron, cron_sem_log = [], 0
+    paradas = rotinas_paradas(estado)
+    for u, v in logs_das_rotinas(estado, ts).items():
+        n, _ = saida.get(u, (0, ''))
+        saida[u] = (n + v[0], v[1])
+    cron, cron_sem_log, cron_paradas = [], 0, []
     if c['cron'] and shutil.which('crontab'):
-        cron, tarefas, cron_sem_log = logs_cron(estado)
+        cron, tarefas, cron_sem_log, cron_paradas = logs_cron(estado)
         if tarefas and tarefas == cron_sem_log:
             puladas.append('cron')
         elif tarefas:
@@ -175,6 +256,13 @@ def rodar(cfg, horas=None, sem_aviso=False):
             continue
         nome = u.removesuffix('.service')
         (grave if u in ts else atencao).append(f"{'a rotina' if u in ts else 'a tarefa avulsa'} {nome} falhou {n}×")
+    for nome, atraso, ritmo in paradas:
+        grave.append(f'a rotina {nome} parou de rodar: a última vez foi há {tempo(atraso)}, '
+                     f'e ela costuma rodar a cada {tempo(ritmo)}')
+    for u, (n, ult) in sorted(saida.items(), key=lambda x: -x[1][0]):
+        if u in ts and u not in falhas and u.removesuffix('.service') not in c['ignorar']:
+            fim = f' — última: {ult[:110]}' if c['trechos'] else ''
+            atencao.append(f"a rotina {u.removesuffix('.service')} terminou, mas escreveu {n} linha(s) com erro{fim}")
     if oom or mortos:
         nomes = ', '.join(f'{k} {v}×' for k, v in collections.Counter(mortos).most_common(5)) or '?'
         servicos = [u for u in dict.fromkeys(oom) if u.endswith('.service')]
@@ -194,6 +282,9 @@ def rodar(cfg, horas=None, sem_aviso=False):
         extra = ' (primeira leitura: pode incluir erros antigos)' if primeira else ''
         fim = f' — última: {ult[:110]}' if c['trechos'] else ''
         atencao.append(f'tarefa agendada ({Path(alvo).name}): {n} linha(s) com erro{extra}{fim}')
+    for nome, parado, periodo in cron_paradas:
+        atencao.append(f'tarefa agendada ({nome}): sem nenhuma atividade há {tempo(parado)}, '
+                       f'e deveria rodar a cada {tempo(periodo)}; pode ter parado')
     for p, n in novos:
         atencao.append(f'{n} registro(s) novo(s) em {p.parent.name}/{p.name}')
     velhos = [u for u in presos_lista if u not in falhas]
@@ -231,11 +322,11 @@ def rodar(cfg, horas=None, sem_aviso=False):
     if grave:
         msg = f'🌙 Madrugada {hoje}: {len(grave)} GRAVE, {len(atencao)} atenção\n' + \
               '\n'.join(f'• {x}' for x in grave[:8]) + \
-              ''.join(f'\n• {x}' for x in [a for a in atencao if a.startswith('tarefa agendada')][:3]) + \
+              ''.join(f'\n• {x}' for x in [a for a in atencao if a.startswith(PRIORITARIOS)][:3]) + \
               f'\nRelatório: {rel}' + ressalva
     elif atencao:
         msg = f'🌙 Madrugada {hoje}: nada grave, {len(atencao)} ponto(s) de atenção\n' + \
-              '\n'.join(f'• {x}' for x in sorted(atencao, key=lambda a: not a.startswith('tarefa agendada'))[:5]) + \
+              '\n'.join(f'• {x}' for x in sorted(atencao, key=lambda a: not a.startswith(PRIORITARIOS))[:5]) + \
               f'\nRelatório: {rel}' + ressalva
     elif faltou:  # nunca dizer "limpa" sobre o que não foi olhado
         msg = f'🌙 Madrugada {hoje}: nada encontrado no que consegui olhar.' + ressalva

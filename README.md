@@ -4,7 +4,7 @@
 
 [![Zelador](guia/assets/banner.jpg)](https://inematds.github.io/zelador/guia/)
 
-**Sua automação falhou de madrugada e ninguém viu?** Com o Zelador, de manhã você vê o que deu erro nas rotinas da sua máquina. Na segunda, recebe em português simples o que vale consertar, e decide.
+**O agente Zelador te ajuda a melhorar o seu sistema todo dia.** Enquanto você dorme, ele olha o que falhou. De manhã, te avisa. Com o que se repete, aprende e te sugere o conserto. Você só decide.
 
 ## 📖 Guia
 
@@ -16,8 +16,8 @@ Quem deixa robôs e agentes de IA trabalhando sozinhos só descobre o problema q
 
 ## O que ele vê e o que não vê
 
-- **Vê:** rotinas agendadas no próprio computador ou servidor Linux que registram erro, falta de memória, erros repetidos, disco quase cheio e tudo o que você ou a sua IA anotam nas listas de falhas, limites e pendências.
-- **Não vê:** o que roda em serviços na internet, rotinas do sistema, do administrador ou de outra conta, tarefa do cron sem arquivo de registro, rotina que deixou de rodar sem registrar erro, rotina que anota erro mas termina como se tivesse dado certo e resultado errado que terminou sem erro (a não ser que a falha seja anotada).
+- **Vê:** rotinas agendadas no próprio computador ou servidor Linux que falham, escrevem erro ou param de rodar (ele aprende o ritmo de cada uma em alguns dias), falta de memória, erros repetidos, disco quase cheio e tudo o que você ou a sua IA anotam nas listas de falhas, limites e pendências.
+- **Não vê:** o que roda em serviços na internet, rotinas do sistema, do administrador ou de outra conta, tarefa do cron sem arquivo de registro, e resultado errado que não deixa nenhum sinal (a não ser que a falha seja anotada).
 - **Sem ninguém conectado** (servidor, ou computador que reiniciou): os agendamentos da conta só rodam com `sudo loginctl enable-linger <usuário>`. O diagnóstico avisa quando falta.
 - **Se nenhuma mensagem chegar de manhã, desconfie:** por padrão ele manda uma linha mesmo em noite limpa, então o silêncio indica que a ronda pode não ter rodado.
 - **Dados sensíveis:** o aviso e o relatório podem levar trechos dos registros, e a explicação por IA envia título, proposta e evidências. Se os registros têm dados de clientes, use `noite.trechos = false` e deixe `explicar.comando` vazio.
@@ -50,7 +50,7 @@ Python 3.11+, só biblioteca padrão. Testado em Linux; fonte que não existe na
 
 ```bash
 git clone https://github.com/inematds/zelador.git && cd zelador
-python3 -m unittest discover -s tests -v     # 21 testes, sem rede
+python3 -m unittest discover -s tests -v     # 23 testes, sem rede
 bin/zelador iniciar                          # diagnóstico: não escreve nada
 bin/zelador iniciar --aplicar                # cria o que falta, nunca sobrescreve
 bin/zelador bloco                            # instrução para colar no CLAUDE.md/AGENTS.md
